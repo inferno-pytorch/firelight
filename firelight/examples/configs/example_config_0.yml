@@ -1,6 +1,6 @@
 RowVisualizer: # stack the outputs of child visualizers as rows of an image grid
   input_mapping:
-    global: ['B': ':3', 'D': ':7:2'] # Show only 3 samples in each batch ('B'), and some slices along depth ('D').
+    global: ['B': ':3', 'D': '0:9:3'] # Show only 3 samples in each batch ('B'), and some slices along depth ('D').
     prediction: ['C': '0']  # Show only the first channel of the prediction
 
   pad_value: [0.2, 0.6, 1.0] # RGB color of separating lines

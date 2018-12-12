@@ -190,6 +190,7 @@ DEFAULT_SPECS = {
 
 
 def apply_slice_mapping(mapping, states, include_old_states=True):
+    print('asdf')
     """
     Add/Replace tensors in the dictionary 'states' as specified with the dictionary 'mapping'. Each key in mapping
     corresponds to a state in the resulting dictionary, and each value describes:
@@ -487,12 +488,13 @@ class ContainerVisualizer(BaseVisualizer):
             in_specs = dict() if extra_in_specs is None else extra_in_specs
             in_specs.update({self.visualizer_kwarg_names[i]: in_spec for i in range(self.n_visualizers)})
         super(ContainerVisualizer, self).__init__(
-            input_mapping=input_mapping,
+            input_mapping={},
             in_specs=in_specs,
             out_spec=out_spec,
             colorize=colorize,
             **super_kwargs
         )
+        self.container_input_mapping = input_mapping
         self.equalize_visualization_shapes = equalize_visualization_shapes
 
     def __call__(self, return_spec=False, **states):
@@ -514,7 +516,7 @@ class ContainerVisualizer(BaseVisualizer):
         """
         states = copy(states)
         # map input keywords and apply slicing
-        states = apply_slice_mapping(self.input_mapping, states)
+        states = apply_slice_mapping(self.container_input_mapping, states)
         # apply visualizers and update state dict
         in_states = states.copy()
         visualizations = []

@@ -4,7 +4,7 @@ from skimage.data import binary_blobs
 from skimage.filters import gaussian
 
 def get_example_states():
-    batchsize = 3
+    batchsize = 5
     target = np.stack([binary_blobs(length=128, n_dim=3, blob_size_fraction=0.25, volume_fraction=0.5, seed=i)
                        for i in range(batchsize)], axis=0).astype(np.float32)
     sigma = 0.5
