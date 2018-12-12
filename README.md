@@ -6,14 +6,14 @@ Its core object is a **visualizer**, which can be called passing a dictionary of
 configuration file.
 
 Why you will like firelight initially:
-- Neat Image Grids, lining up inputs, targets and predictions
-- Colorful images: Automatic scaling for RGB, matplotlib colormaps for grayscale data, randomly colored label images
-- Many available visualizers
+- Neat image grids, lining up inputs, targets and predictions,
+- Colorful images: Automatic scaling for RGB, matplotlib colormaps for grayscale data, randomly colored label images,
+- Many available visualizers.
 
 Why you will keep using firelight:
-- Everything in one config file
-- Easily write your own visualizers
-- Generality in Dimensions: All visualizers usable with data of arbitrary dimension
+- Everything in one config file,
+- Easily write your own visualizers,
+- Generality in dimensions: All visualizers usable with data of arbitrary dimension.
 
 ## Installation
 On python 3.6+:
@@ -29,7 +29,8 @@ python setup.py install
 ## Example
 
 - Run the example `firelight/examples/example_data.py`
-- Config file:
+
+Config file:
 
 ```yaml
 RowVisualizer: # stack the outputs of child visualizers as rows of an image grid
@@ -71,7 +72,8 @@ RowVisualizer: # stack the outputs of child visualizers as rows of an image grid
           tensor: ['prediction', pre: 'sigmoid'] # Apply sigmoid function from torch.nn.functional before visualize.
         value_range: [0, 1] # Scale such that 0 is white and 1 is black. If not specified, whole range is used.
 ```
-- Python code:
+
+Python code:
 
 ```python
 from firelight import get_visualizer
@@ -89,6 +91,7 @@ image_grid = visualizer(**states)
 # Log your image however you want
 plt.imsave('visualizations/example_visualization.jpg', image_grid.numpy())
 ```
-- Resulting visualization: 
+
+Resulting visualization: 
 
 ![Example Image Grid](/firelight/examples/visualizations/example_visualization.png)
