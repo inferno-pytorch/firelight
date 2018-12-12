@@ -1,0 +1,108 @@
+example_visualizer:  # specify name under which visualizations will be logged
+
+  # The images will be arranged in a grid, where the images corresponding to
+  # different visualizers are stacked vertically (For horizontal stacking use ColumnVisualizer).
+  RowVisualizer:
+
+    # For each visualizer (also container visualizers, such as RowVisualizer), an input mapping can be passed.
+    # It specifies the mapping between trainer states and the keyword arguments of the 'visualize' function of the
+    # visualizers. This is done with a dictionary with the argument names as keys. The values specify where to get
+    # the argument:
+    #   - if the value is a string, it is assumed to be the key in the trainer state dictionary
+    #     (e.g. embedding: 'prediction')
+    #   - if the value is a list, the key in the trainer state dict can be specified as its first element. if this
+    #     element is no string, the trainer key is assumed to be the same as the argument name.
+    #     The remaining entries have to be one element dictionaries, that can specify one of three things:\
+    #         - if the key is 'index', the value must be an integer that specifies which element of the trainer state
+    #           to take, if it is a list (and not a torch.Tensor)
+    #         - if the key is 'pre', the name of a function in torch.nn.functional has to be supplied as the value,
+    #           optionally as another 1-element dict, with a value containing additional arguments to that function.
+    #           This function is applied to the trainer state that is mapped (after potential slicing)
+    #         - dicts with other keys specify the slicing.
+    #           The axes of tensors are named, e.g. ['B', 'C', 'D', 'H', 'W'] for a batch of volumes. The key of the
+    #           dict must be the name of the axis to be sliced, and the value specifies which slices to take.
+    #           e.g.: taking only the first sample in a batch: [B: '0']
+    #                 taking the channels 1 to 3: [C: '1:3']
+    #                 downsampling images by a factor of 2: [H: '::2', W: '::2']
+    input_mapping:
+      global: [B: 0, D: ':'] # the mapping specified in 'global' is applied to all keys
+      input: ['inputs', index: 0]
+      segmentation: ['target', index: 0]
+      # these two lines needs to be here in order for the global slicing to be applied to prediction and target
+      prediction: 'prediction'
+      target: 'target'
+
+    pad_width: 1  # width of the border between images in pixels
+    pad_value: .2  # intensity of the border pixels
+    upsampling_factor: 3  # the whole grid is upsampled by this factor
+
+    # Container visualizers always have the 'visualizers' argument. Its value has to be a list of visualizers
+    visualizers:
+
+      # visualize raw input
+      - InputVisualizer:
+          # for this visualizer, no input mapping is passed. Hence, the state dict its 'visualize' function gets consists
+          # of the trainer states, or, if applicable (as in this case), of the states of its parent visualizer (the RowVisualizer)
+          # The 'input' state is already specified there, so there is no need to add it here, too.
+
+          # for visualizer that do not take care of colorization in the 'visualize' function,
+          # the name of a matplotlib colormap can be passed.
+          cmap: inferno
+
+      # visualize gt segmentation
+      - SegmentationVisualizer:
+          background_color: [1, 1, 1]
+          background_label: 0
+
+      # visualize segmentation predictions
+      - PredictionVisualizer:
+          input_mapping:
+            prediction: [C: '0', pre: 'sigmoid']  # only show the first channel (=FGBG prediction) and apply sigmoid to get probabilities
+
+          # 'value_range' is an optional argument that can overwrite the color scaling:
+          # per default, the whole color range is used for R, G, B. If value_range is specified, the 'visualize' output
+          # is mapped to colors with value_range[0] being black and value_range[1] being white.
+          value_range: [0, 1]
+
+      # visualize ground-truth orientations
+      - RGBVisualizer:
+          input_mapping:
+            # there are two targets, the second one being the gt-orientations visualized here, hence index=1
+            image: ['target', index: 1]
+          value_range: [-1, 1] # the directions being visualized lie on the unit sphere, hence coordinates are between -1 and 1
+          background_label: 0
+          background_color: [0, 0, 0]
+
+      # visualize unmasked predicted orientations
+      - SegTags.visualizers.OrientationVisualizer3D:  # custom visualizers in different projects can be accessed, too
+          input_mapping:
+            prediction: [C: '1:']
+
+      # visualize masked predicted orientations
+      - OverlayVisualizer: # A container visualizer, used to overlay paritally transparent visualizers on top of others.
+          visualizers:
+            - MaskVisualizer: # this visualizer is on top
+                input_mapping:
+                  image: ['segmentation']
+                # the mask returned by MaskVisualizers is opaque where the input is equal to mask_label.
+                # hence, the background label 0 is specified here.
+                mask_label: 0
+            - SegTags.visualizers.OrientationVisualizer3D:
+                input_mapping:
+                  prediction: [C: '1:']
+
+      # visualize which side of the cube was predicted
+      - RGBVisualizer:
+          input_mapping:
+            # more complex usage of 'pre': softmax in the channel dimension
+            image: ['prediction', pre: {softmax: {dim: 1}}, C: '-3:']
+          value_range: [0, 1]
+
+      # visualize coordinate predictions
+      - PredictionVisualizer:
+          input_mapping:
+            prediction: [C: '1:7']
+
+
+
+
