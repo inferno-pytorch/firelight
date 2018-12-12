@@ -1,10 +1,10 @@
 RowVisualizer: # stack the outputs of child visualizers as rows of an image grid
   input_mapping:
-    global: ['B': ':3', 'D': ':6:2'] # Show only 3 samples in each batch ('B'), and some slices along depth ('D').
+    global: ['B': ':3', 'D': ':7:2'] # Show only 3 samples in each batch ('B'), and some slices along depth ('D').
     prediction: ['C': '0']  # Show only the first channel of the prediction
 
   pad_value: [0.2, 0.6, 1.0] # RGB color of separating lines
-  pad_width: {B: 4, H: 0, W: 0, rest: 2} # Padding for batch ('B'), height ('H'), width ('W') and other dimensions.
+  pad_width: {B: 6, H: 0, W: 0, rest: 3} # Padding for batch ('B'), height ('H'), width ('W') and other dimensions.
 
   visualizers:
     # First row: Ground truth
@@ -25,7 +25,7 @@ RowVisualizer: # stack the outputs of child visualizers as rows of an image grid
               input_mapping:
                 segmentation: 'target'
               width: 2
-              opacity: 0.5 # Make output only partially opaque.
+              opacity: 0.7 # Make output only partially opaque.
           - IdentityVisualizer: # prediction
               input_mapping:
                 tensor: 'prediction'
