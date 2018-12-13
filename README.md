@@ -96,7 +96,7 @@ Resulting visualization:
 
 ![Example Image Grid](/firelight/examples/visualizations/example_visualization.png)
 
-Many more visualizers are available. Have a look at `visualizers.py` and `container_visualizers.py` at `/firelight/visualizers/`!
+Many more visualizers are available. Have a look at [visualizers.py](/firelight/visualizers/visualizers.py ) and [container_visualizers.py](/firelight/visualizers/container_visualizers.py) or, for a more condensed list, [config_parsing.py](/firelight/config_parsing.py).
 
 ### With Inferno
 Firelight can be easily combined with a `TensorboardLogger` from [inferno](https://github.com/inferno-pytorch/inferno).
