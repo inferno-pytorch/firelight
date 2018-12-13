@@ -220,7 +220,7 @@ def apply_slice_mapping(mapping, states, include_old_states=True):
                     state = state[0]
                 if not isinstance(state, torch.Tensor):
                     continue
-                if not len(state) > 0:
+                if not len(state.shape) > 0:
                     continue
                 mapping[state_name] = {}
 

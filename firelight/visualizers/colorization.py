@@ -1,5 +1,4 @@
 from ..utils.dim_utils import SpecFunction, convert_dim
-import colorsys
 import matplotlib.cm as cm
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt

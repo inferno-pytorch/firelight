@@ -3,16 +3,21 @@ import torch
 from skimage.data import binary_blobs
 from skimage.filters import gaussian
 
+
 def get_example_states():
+    # generate some toy foreground/background segmentation
     batchsize = 5
     target = np.stack([binary_blobs(length=128, n_dim=3, blob_size_fraction=0.25, volume_fraction=0.5, seed=i)
                        for i in range(batchsize)], axis=0).astype(np.float32)
+
+    # generate toy raw data as noisy target
     sigma = 0.5
     input = target + np.random.normal(loc=0, scale=sigma, size=target.shape)
 
     # compute mock prediction as gaussian smooting of input data
     prediction = np.stack([gaussian(sample, sigma=3, truncate=2.0) for sample in input], axis=0)
     prediction = 10 * (prediction - 0.5)
+
     # put input, target, prediction in dictionary, convert to torch.Tensor, add dimensionality labels ('specs')
     state_dict = {
         'input': (torch.Tensor(input).float(), 'BDHW'),  # Dimensions are B, D, H, W = Batch, Depth, Height, Width

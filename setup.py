@@ -12,11 +12,12 @@ setuptools.setup(
     description="A visualization library for PyTorch tensors.",
     version="0.1",
     install_requires=[
-        "scikit-image",
         "pyyaml>=3.12",
+        "matplotlib",
         "numpy",
         "scikit-learn",
+        "scikit-image",
         "torch",
-    ],  # TODO
+    ],
     packages=setuptools.find_packages(),
 )
