@@ -1,8 +1,8 @@
 # Firelight
 
 Firelight is a visualization library for pytorch. 
-Its core object is a **visualizer**, which can be called passing a dictionary of states (such as `inputs`, `target`, 
-`prediction`) returning a visualization of the data. What exactly that visualization shows, is specified in a .yml
+Its core object is a **visualizer**, which can be called passing some states (such as `inputs`, `target`, 
+`prediction`) returning a visualization of the data. What exactly that visualization shows, is specified in a yaml
 configuration file.
 
 Why you will like firelight initially:
@@ -30,7 +30,7 @@ python setup.py install
 
 - Run the example `firelight/examples/example_data.py`
 
-Config file:
+Config file `example_config_0.yml`:
 
 ```yaml
 RowVisualizer: # stack the outputs of child visualizers as rows of an image grid
@@ -95,3 +95,35 @@ plt.imsave('visualizations/example_visualization.jpg', image_grid.numpy())
 Resulting visualization: 
 
 ![Example Image Grid](/firelight/examples/visualizations/example_visualization.png)
+
+Many more visualizers are available. Have a look at `visualizers.py` and `container_visualizers.py` at `/firelight/visualizers/`!
+
+### With Inferno
+Firelight can be easily combined with a `TensorboardLogger` from [inferno](https://github.com/inferno-pytorch/inferno).
+Simply add an extra line at the start of your config specifying under which tag the visualizations should be logged, and
+add a callback to your trainer with `get_visualization_callback` in `firelight/inferno_callback.py`
+
+Config:
+```yaml
+fancy_visualization: # This will be the tag in tensorboard
+    RowVisualizer:
+      ...
+```
+Python:
+```python
+from inferno.trainers.basic import Trainer
+from inferno.trainers.callbacks.logging.tensorboard import TensorboardLogger
+from firelight.inferno_callback import get_visualization_callback
+
+# Build trainer and logger
+trainer = Trainer(...)
+logger = TensorboardLogger(...)
+trainer.build_logger(logger, log_directory='path/to/logdir')
+
+# Register the visualization callback
+trainer.register_callback(
+        get_visualization_callback(
+            config='path/to/visualization/config'
+        )
+    )
+```

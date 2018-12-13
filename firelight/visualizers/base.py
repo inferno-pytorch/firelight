@@ -190,7 +190,6 @@ DEFAULT_SPECS = {
 
 
 def apply_slice_mapping(mapping, states, include_old_states=True):
-    print('asdf')
     """
     Add/Replace tensors in the dictionary 'states' as specified with the dictionary 'mapping'. Each key in mapping
     corresponds to a state in the resulting dictionary, and each value describes:

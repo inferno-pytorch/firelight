@@ -21,7 +21,27 @@ def hsv_to_rgb(h, s, v):  # TODO: remove colorsys dependency
     -------
         np.ndarray
     """
-    return np.array(colorsys.hsv_to_rgb(h, s, v), dtype=np.float32)
+    i = np.floor(h*6.0)
+    f = h * 6 - i
+    p = v * (1 - s)
+    q = v * (1 - s * f)
+    t = v * (1 - s * (1 - f))
+    i = i % 6
+
+    if i == 0:
+        rgb = (v, t, p)
+    elif i == 1:
+        rgb = (q, v, p)
+    elif i == 2:
+        rgb = (p, v, t)
+    elif i == 3:
+        rgb = (p, q, v)
+    elif i == 4:
+        rgb = (t, p, v)
+    else:
+        rgb = (v, p, q)
+
+    return np.array(rgb, dtype=np.float32)
 
 
 def get_distinct_colors(n, min_sat=.5, min_val=.5):
