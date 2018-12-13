@@ -19,5 +19,6 @@ setuptools.setup(
         "scikit-image",
         "torch",
     ],
+    license="Apache Software License 2.0",
     packages=setuptools.find_packages(),
 )
