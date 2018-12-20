@@ -73,6 +73,18 @@ class PredictionVisualizer(BaseVisualizer):
         return prediction
 
 
+class MSEVisualizer(BaseVisualizer):
+    def __init__(self, **super_kwargs):
+        super(MSEVisualizer, self).__init__(
+            in_specs={'prediction': 'B', 'target': 'B'},
+            out_spec='B',
+            **super_kwargs
+        )
+
+    def visualize(self, prediction, target, **_):
+        return (prediction - target)**2
+
+
 class SegmentationVisualizer(BaseVisualizer):
     def __init__(self, **super_kwargs):
         super(SegmentationVisualizer, self).__init__(

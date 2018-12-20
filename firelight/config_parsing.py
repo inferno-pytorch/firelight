@@ -12,6 +12,7 @@ from .visualizers.visualizers import \
     InputVisualizer, \
     TargetVisualizer, \
     PredictionVisualizer, \
+    MSEVisualizer, \
     RGBVisualizer, \
     MaskVisualizer, \
     ImageVisualizer, \
@@ -44,7 +45,6 @@ def get_single_key_value_pair(d):
 def get_visualizer_class(name):
     assert name in globals(), f"Transform {name} not found."
     return globals().get(name)
-
 
 def get_visualizer(config):
     config = yaml2dict(config)
