@@ -20,7 +20,7 @@ On python 3.6+:
 
 ```bash
 # Clone the repository
-git clone https://github.com/imagirom/firelight
+git clone https://github.com/inferno-pytorch/firelight
 cd firelight/
 # Install
 python setup.py install
