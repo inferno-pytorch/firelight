@@ -290,7 +290,7 @@ def apply_slice_mapping(mapping, states, include_old_states=True):
 
 class BaseVisualizer(SpecFunction):
     def __init__(self, input_mapping=None, colorize=True,
-                 cmap=None, background_label=None, background_color=None, opacity=1.0, color_jointly=None,
+                 cmap=None, background_label=None, background_color=None, opacity=1.0, colorize_jointly=None,
                  value_range=None, verbose=False,
                  **super_kwargs):
         """
@@ -315,7 +315,7 @@ class BaseVisualizer(SpecFunction):
             list of length 3 or 4 respectively.
         opacity : float
             Opacity of visualization, see colorization.py.
-        color_jointly : List of str
+        colorize_jointly : List of str
             A list containing names of dimensions. Sets of data points separated only in these dimensions will be scaled
             equally at colorization (such that they lie in [0, 1]). Not used if 'value_range' is specified.
             Default: ['W', 'H', 'D'] (=[Width, Height, Depth])
@@ -347,7 +347,7 @@ class BaseVisualizer(SpecFunction):
         self.colorize = colorize
         self.colorization_func = Colorize(cmap=cmap, background_color=background_color,
                                           background_label=background_label, opacity=opacity,
-                                          value_range=value_range, color_jointly=color_jointly)
+                                          value_range=value_range, colorize_jointly=colorize_jointly)
         self.verbose = verbose
 
     def __call__(self, return_spec=False, **states):

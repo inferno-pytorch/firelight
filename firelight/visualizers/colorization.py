@@ -136,7 +136,7 @@ def _add_alpha(img):
 
 class Colorize(SpecFunction):
     def __init__(self, background_label=None, background_color=None, opacity=1.0, value_range=None, cmap=None,
-                 color_jointly=None):
+                 colorize_jointly=None):
         """
         Constructs an object used for the colorization / color normalization of tensors. The output tensor has a
         length 4 RGBA output dimension labeled 'Color'.
@@ -158,14 +158,14 @@ class Colorize(SpecFunction):
             https://matplotlib.org/examples/color/colormaps_reference.html for a list of available colormaps).
             If callable, has to be function that adds a RGBA color dimension at the end, to an input numpy array with
             values between 0 and 1.
-        color_jointly : list
+        colorize_jointly : list
             List of the names of dimensions that should be colored jointly. Default: ['W', 'H', 'D'].
             data points separated only in these dimensions will be scaled equally. See StackVisualizer for an example
             usage.
         """
-        color_jointly = ('W', 'H', 'D') if color_jointly is None else list(color_jointly)
+        colorize_jointly = ('W', 'H', 'D') if colorize_jointly is None else list(colorize_jointly)
         collapse_into = {'rest': 'B'}
-        collapse_into.update({d: 'Pixels' for d in color_jointly})
+        collapse_into.update({d: 'Pixels' for d in colorize_jointly})
         super(Colorize, self).__init__(in_specs={'tensor': ['B', 'Pixels', 'Color']},
                                        out_spec=['B', 'Pixels', 'Color'],
                                        collapse_into=collapse_into)

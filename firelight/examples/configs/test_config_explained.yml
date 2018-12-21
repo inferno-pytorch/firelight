@@ -1,4 +1,4 @@
-example_visualizer:  # specify name under which visualizations will be logged
+example_visualizer:  # specify name under which visualizations will be logged (only for usage with inferno)
 
   # The images will be arranged in a grid, where the images corresponding to
   # different visualizers are stacked vertically (For horizontal stacking use ColumnVisualizer).
@@ -28,9 +28,6 @@ example_visualizer:  # specify name under which visualizations will be logged
       global: [B: 0, D: ':'] # the mapping specified in 'global' is applied to all keys
       input: ['inputs', index: 0]
       segmentation: ['target', index: 0]
-      # these two lines needs to be here in order for the global slicing to be applied to prediction and target
-      prediction: 'prediction'
-      target: 'target'
 
     pad_width: 1  # width of the border between images in pixels
     pad_value: .2  # intensity of the border pixels

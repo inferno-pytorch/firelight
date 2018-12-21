@@ -4,8 +4,6 @@ visualization_grid:
       global: [B: 0, D: ':']
       input: ['inputs', index: 0]
       segmentation: ['target', index: 0]
-      prediction: 'prediction'  # this needs to be here in order for the global slicing to be applied
-      target: 'target'
 
     pad_width: 1
     pad_value: .2
