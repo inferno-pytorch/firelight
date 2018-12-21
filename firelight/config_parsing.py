@@ -4,6 +4,7 @@ from pydoc import locate
 import logging
 import sys
 
+# List of available visualizers (without container visualizers)
 from .visualizers.visualizers import \
     IdentityVisualizer, \
     PcaVisualizer, \
@@ -20,6 +21,7 @@ from .visualizers.visualizers import \
     DiagonalSplitVisualizer, \
     CrackedEdgeVisualizer
 
+# List of available container visualizers (visualizers acting on outputs of child visualizers)
 from .visualizers.container_visualizers import \
     ImageGridVisualizer, \
     RowVisualizer, \
@@ -29,6 +31,7 @@ from .visualizers.container_visualizers import \
     StackVisualizer
 
 
+# set up logging
 logging.basicConfig(format='[+][%(asctime)-15s][VISUALIZATION]'
                            ' %(message)s',
                     stream=sys.stdout,
@@ -37,70 +40,75 @@ logger = logging.getLogger(__name__)
 
 
 def get_single_key_value_pair(d):
+    """
+    Returns the key and value of a one element dictionary, checking that it actually has only one element
+    Parameters
+    ----------
+    d : dict
+
+    Returns
+    -------
+    tuple
+
+    """
     assert isinstance(d, dict), f'{d}'
     assert len(d) == 1, f'{d}'
     return list(d.keys())[0], list(d.values())[0]
 
 
 def get_visualizer_class(name):
-    assert name in globals(), f"Transform {name} not found."
-    return globals().get(name)
+    """
+    Parses the class of a visualizer from a String. If the name is not found in globals(), tries to import it.
+
+    Parameters
+    ----------
+    name : str
+        Name of a visualization class imported above, or dotted path to one (e.g. your custom visualizer in a different
+        library).
+
+    Returns
+    -------
+        type or None
+
+    """
+    if name in globals():  # visualizer is imported above
+        return globals().get(name)
+    else:  # dotted path is given
+        visualizer = locate(name)
+        assert visualizer is not None, f'Could not find visualizer "{name}".'
+        assert issubclass(visualizer, BaseVisualizer), f'"{visualizer}" is no visualizer'
+
 
 def get_visualizer(config):
-    config = yaml2dict(config)
-    name, kwargs = get_single_key_value_pair(config)
-    if name in globals():
-        visualizer = get_visualizer_class(name)
-    elif '.' in name:
-        visualizer = locate(name)
-        assert visualizer is not None, f'could not find {name}'
-    else:
+    """
+    Parses a yaml configuration file to construct a visualizer.
+
+    Parameters
+    ----------
+    config : str or dict or BaseVisualizer
+        Either path to yaml configuration file or dictionary (as constructed by loading such a file).
+        If already visualizer, it is just returned.
+
+    Returns
+    -------
+        BaseVisualizer
+
+    """
+    if isinstance(config, BaseVisualizer):  # nothing to do here
         return config
+    # parse config to dict (does nothing if already dict)
+    config = yaml2dict(config)
+    # name (or dotted path) and kwargs of visualizer have to be specified as key and value of one element dictionary
+    name, kwargs = get_single_key_value_pair(config)
+    # get the visualizer class from its name
+    visualizer = get_visualizer_class(name)
     logger.info(f'Parsing {visualizer.__name__}')
     if issubclass(visualizer, ContainerVisualizer):  # container visualizer: parse sub-visualizers first
         assert isinstance(kwargs['visualizers'], list), f'{kwargs["visualizers"]}, {type(kwargs["visualizers"])}'
-        sub_visualizers = []
+        child_visualizers = []
         for c in kwargs['visualizers']:
             v = get_visualizer(c)
-            assert isinstance(v, BaseVisualizer), f'could not parse visualizer: {c}'
-            sub_visualizers.append(v)
-        kwargs['visualizers'] = sub_visualizers
+            assert isinstance(v, BaseVisualizer), f'Could not parse visualizer: {c}'
+            child_visualizers.append(v)
+        kwargs['visualizers'] = child_visualizers
     return visualizer(**kwargs)
-
-
-if __name__ == '__main__':
-    import pydoc
-
-    def import_class(name):
-        components = name.split('.')
-        mod = __import__(components[0])
-        for comp in components[1:]:
-            logger.info(mod.__dict__)
-            mod = getattr(mod, comp)
-        return mod
-
-    v = pydoc.locate('SegTags.visualizers.OrientationVisualizer')
-    logger.info(v)
-
-    assert False
-
-
-    import torch
-    import numpy as np
-
-    config = './example_configs/test_config.yml'
-    config = yaml2dict(config)
-    callback = get_visualization_callback(config)
-    v = callback.visualizer
-
-    tensor = torch.Tensor(np.random.randn(2, 32, 10, 8, 8))
-    result = v(inputs=tensor,
-               prediction=2 * tensor,
-               target=tensor > 0)
-    print(result)
-    print(result.shape)
-    import matplotlib.pyplot as plt
-    plt.figure()
-    plt.imshow(result)
-    plt.show()
-
