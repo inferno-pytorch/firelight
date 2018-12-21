@@ -5,6 +5,7 @@ from copy import copy
 import torch.nn.functional as F
 import logging
 import sys
+from pydoc import locate
 
 # Set up logger
 logging.basicConfig(format='[+][%(asctime)-15s][VISUALIZATION]'
@@ -136,12 +137,11 @@ def parse_pre_func(pre_info):
     ----------
     pre_info: list, dict or str
         Depending on the type:
-            - str:  Name of function in torch.nn.functional to be applied
+            - str:  Name of function in torch, torch.nn.functional, or dotted path to function.
             - list: List of functions to be applied in succession. Each will be parsed by this function.
-            - dict: Has to have length one. The key is the name of a function in torch.nn.functional, the value
-                    specifies additional arguments supplied to that function (apart from the tensor that will be
-                    transformed). Either positional arguments can be specified as a list, or keyword arguments as a
-                    dictionary.
+            - dict: Has to have length one. The key is the name of a function (see 'str' above), the value specifies
+                    additional arguments supplied to that function (apart from the tensor that will be transformed).
+                    Either positional arguments can be specified as a list, or keyword arguments as a dictionary.
         Examples:
             - pre_info = 'sigmoid'
             - pre_info = {'softmax': [1]}}
@@ -168,15 +168,25 @@ def parse_pre_func(pre_info):
         arg_info = []
     else:
         assert False, f'{pre_info}'
+
     if isinstance(arg_info, dict):
         kwargs = arg_info
         args = []
     elif isinstance(arg_info, list):
         kwargs = {}
         args = arg_info
-    # Try to get the function from torch.nn.functional
-    pre_func_without_args = getattr(F, pre_name)
-    pre_func = lambda x: pre_func_without_args(x, *args, **kwargs)
+
+    # Parse the function name
+    pre_func_without_args = getattr(torch, pre_name, None)
+    if pre_func_without_args is None:  # not found in torch
+        pre_func_without_args = getattr(torch.nn.functional, pre_name, None)
+    if pre_func_without_args is None:  # not found in torch or torch.nn.functional
+        pre_func_without_args = locate(pre_name)
+    assert callable(pre_func_without_args), f'Could not find the function {pre_name}'
+
+    def pre_func(x):
+        return pre_func_without_args(x, *args, **kwargs)
+
     return pre_func
 
 
