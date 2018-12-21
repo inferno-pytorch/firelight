@@ -80,7 +80,7 @@ def get_visualizer_class(name):
         assert issubclass(visualizer, BaseVisualizer), f'"{visualizer}" is no visualizer'
 
 
-def get_visualizer(config):
+def get_visualizer(config, indentation=0):
     """
     Parses a yaml configuration file to construct a visualizer.
 
@@ -89,7 +89,8 @@ def get_visualizer(config):
     config : str or dict or BaseVisualizer
         Either path to yaml configuration file or dictionary (as constructed by loading such a file).
         If already visualizer, it is just returned.
-
+    indentation : int
+        How far logging messages arising here should be indented.
     Returns
     -------
         BaseVisualizer
@@ -103,13 +104,29 @@ def get_visualizer(config):
     name, kwargs = get_single_key_value_pair(config)
     # get the visualizer class from its name
     visualizer = get_visualizer_class(name)
-    logger.info(f'Parsing {visualizer.__name__}')
+    logger.info(f'Parsing {"  "*indentation} {visualizer.__name__}')
     if issubclass(visualizer, ContainerVisualizer):  # container visualizer: parse sub-visualizers first
         assert isinstance(kwargs['visualizers'], list), f'{kwargs["visualizers"]}, {type(kwargs["visualizers"])}'
         child_visualizers = []
         for c in kwargs['visualizers']:
-            v = get_visualizer(c)
+            v = get_visualizer(c, indentation + 1)
             assert isinstance(v, BaseVisualizer), f'Could not parse visualizer: {c}'
             child_visualizers.append(v)
         kwargs['visualizers'] = child_visualizers
+
+    # TODO: add example with nested visualizers
+    input_mapping = kwargs.get('input_mapping', {})
+    for map_to, map_from in input_mapping.items():
+        # visualizer has to be specified as one element dict
+        if not (isinstance(map_from, dict) and len(map_from) == 1):
+            continue
+        name, _ = get_single_key_value_pair(map_from)
+        # check if the name can be parsed as a visualizer
+        try:
+            _ = get_visualizer_class(name)
+        except AssertionError:
+            continue
+        # parse the visualizer
+        input_mapping[map_to] = get_visualizer(map_from, indentation+1)
+
     return visualizer(**kwargs)

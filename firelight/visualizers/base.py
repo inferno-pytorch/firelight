@@ -236,6 +236,13 @@ def apply_slice_mapping(mapping, states, include_old_states=True):
 
     for map_to in mapping:
         map_from_info = mapping[map_to]
+
+        # mapping specified not in terms of input tensor, but another visualizer
+        if isinstance(map_from_info, BaseVisualizer):
+            visualizer = map_from_info
+            result[map_to] = visualizer(return_spec=True, **copy(states))
+            continue
+
         if isinstance(map_from_info, str):
             map_from_key = map_from_info
             map_from_info = {}
