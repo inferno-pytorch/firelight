@@ -107,16 +107,16 @@ class RGBVisualizer(BaseVisualizer):
         super_kwargs
         """
         super(RGBVisualizer, self).__init__(
-            in_specs={'image': ['B', 'C']},
+            in_specs={'tensor': ['B', 'C']},
             out_spec=['B', 'C', 'Color'],
             **super_kwargs
         )
 
-    def visualize(self, image, **_):
-        n_channels = image.shape[1]
-        assert n_channels % 3 == 0, f'the number of channels {image.shape[1]} has to be divisible by 3'
-        image = image.contiguous().view(image.shape[0], n_channels // 3, 3)
-        return image
+    def visualize(self, tensor, **_):
+        n_channels = tensor.shape[1]
+        assert n_channels % 3 == 0, f'the number of channels {tensor.shape[1]} has to be divisible by 3'
+        tensor = tensor.contiguous().view(tensor.shape[0], n_channels // 3, 3)
+        return tensor
 
 
 class MaskVisualizer(BaseVisualizer):
@@ -131,14 +131,51 @@ class MaskVisualizer(BaseVisualizer):
         super_kwargs
         """
         super(MaskVisualizer, self).__init__(
-            in_specs={'image': ['B']},
+            in_specs={'tensor': ['B']},
             out_spec=['B'],
             **super_kwargs
         )
         self.mask_label = mask_label
 
-    def visualize(self, image, **states):
-        return (image == self.mask_label).float()
+    def visualize(self, tensor, **states):
+        return (tensor == self.mask_label).float()
+
+
+class ThresholdVisualizer(BaseVisualizer):
+    MODES = ['greater', 'smaller', 'greater_equal', 'smaller_equal']
+
+    def __init__(self, threshold, mode='greater_equal', **super_kwargs):
+        """
+        Returns a mask resulting from a thresholding of the input tensor.
+
+        Parameters
+        ----------
+        threshold : int or float
+        mode : str
+            one of the modes in MODES, specifying how to threshold
+        super_kwargs
+        """
+        super(ThresholdVisualizer, self).__init__(
+            in_specs={'tensor': ['B']},
+            out_spec=['B'],
+            **super_kwargs
+        )
+        self.threshold = threshold
+        assert mode in ThresholdVisualizer.MODES, f'Mode {mode} not supported. Use one of {MODES}'
+        self.mode = mode
+
+    def visualize(self, tensor, **_):
+        if self.mode == 'greater':
+            result = tensor > self.threshold
+        elif self.mode == 'smaller':
+            result = tensor < self.threshold
+        elif self.mode == 'greater_equal':
+            result = tensor >= self.threshold
+        elif self.mode == 'smaller_equal':
+            result = tensor <= self.threshold
+        else:
+            raise NotImplementedError
+        return result.float()
 
 
 def pca(embedding, output_dimensions=3, reference=None, center_data=False):

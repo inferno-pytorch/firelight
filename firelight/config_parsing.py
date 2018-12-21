@@ -16,6 +16,7 @@ from .visualizers.visualizers import \
     MSEVisualizer, \
     RGBVisualizer, \
     MaskVisualizer, \
+    ThresholdVisualizer, \
     ImageVisualizer, \
     NormVisualizer, \
     DiagonalSplitVisualizer, \
