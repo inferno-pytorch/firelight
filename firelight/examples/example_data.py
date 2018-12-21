@@ -14,7 +14,7 @@ def get_example_states():
     sigma = 0.5
     input = target + np.random.normal(loc=0, scale=sigma, size=target.shape)
 
-    # compute mock prediction as gaussian smooting of input data
+    # compute mock prediction as gaussian smoothing of input data
     prediction = np.stack([gaussian(sample, sigma=3, truncate=2.0) for sample in input], axis=0)
     prediction = 10 * (prediction - 0.5)
 
