@@ -16,6 +16,15 @@ Why you will keep using firelight:
 - Generality in dimensions: All visualizers usable with data of arbitrary dimension.
 
 ## Installation
+
+### From conda
+
+Firelight is available on conda-forge for python > 3.6 and all operating systems:
+```bash
+conda install -c pytorch -c conda-forge firelight
+```
+
+### From source
 On python 3.6+:
 
 ```bash
