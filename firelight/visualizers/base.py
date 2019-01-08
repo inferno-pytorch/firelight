@@ -228,6 +228,8 @@ def apply_slice_mapping(mapping, states, include_old_states=True):
                 state = states[state_name]
                 if isinstance(state, tuple):
                     state = state[0]
+                if isinstance(state, list) and len(state) > 0:  # as e.g. inputs in inferno
+                    state = state[0]
                 if not isinstance(state, torch.Tensor):
                     continue
                 if not len(state.shape) > 0:

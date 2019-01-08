@@ -202,7 +202,6 @@ class Colorize(SpecFunction):
         if self.background_label is not None:
             bg_mask = tensor == self.background_label
             bg_mask = bg_mask[..., 0]
-            print('bg_mask', bg_mask.shape, tensor.shape)
         else:
             bg_mask = None
 
@@ -236,12 +235,10 @@ class Colorize(SpecFunction):
         assert tensor.shape[-1] == 4
         tensor[..., -1] *= self.opacity  # multiply alpha channel with opacity
 
-        if bg_mask is not None:
-            print('bg_mask', bg_mask.shape, tensor.shape, self.background_color)
+        if bg_mask is not None and torch.sum(bg_mask) > 0:
             assert tensor.shape[-1] == len(self.background_color)
-            tensor[bg_mask.byte()] = torch.Tensor(self.background_color).type_as(tensor)
+            tensor[bg_mask.byte()] = torch.Tensor(np.array(self.background_color)).type_as(tensor)
 
-        #print(tensor.shape)
         return tensor
 
 

@@ -36,3 +36,14 @@ RowVisualizer: # stack the outputs of child visualizers as rows of an image grid
         input_mapping:
           tensor: ['prediction', pre: 'sigmoid'] # Apply sigmoid function from torch.nn.functional before visualize.
         value_range: [0, 1] # Scale such that 0 is white and 1 is black. If not specified, whole range is used.
+
+    # visualize where norm of prediction is smaller than 2
+    - ThresholdVisualizer:
+        input_mapping:
+          tensor:
+            NormVisualizer: # Use the output of NormVisualizer as the input to ThresholdVisualizer
+              input_mapping:
+                tensor: 'prediction'
+              colorize: False
+        threshold: 2
+        mode: 'smaller'

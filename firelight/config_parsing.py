@@ -104,7 +104,7 @@ def get_visualizer(config, indentation=0):
     name, kwargs = get_single_key_value_pair(config)
     # get the visualizer class from its name
     visualizer = get_visualizer_class(name)
-    logger.info(f'Parsing {"  "*indentation} {visualizer.__name__}')
+    logger.info(f'Parsing {"  "*indentation}{visualizer.__name__}')
     if issubclass(visualizer, ContainerVisualizer):  # container visualizer: parse sub-visualizers first
         assert isinstance(kwargs['visualizers'], list), f'{kwargs["visualizers"]}, {type(kwargs["visualizers"])}'
         child_visualizers = []

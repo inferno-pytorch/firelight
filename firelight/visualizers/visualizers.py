@@ -227,7 +227,7 @@ def pca(embedding, output_dimensions=3, reference=None, center_data=False):
 
 
 class PcaVisualizer(BaseVisualizer):
-    def __init__(self, **super_kwargs):
+    def __init__(self, n_components=3, **super_kwargs):
         """
         PCA Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
         to 3 which are interpreted as RGB.
@@ -238,18 +238,23 @@ class PcaVisualizer(BaseVisualizer):
         """
         super(PcaVisualizer, self).__init__(
             in_specs={'embedding': ['B', 'C', 'D', 'H', 'W']},
-            out_spec=['B', 'Color', 'D', 'H', 'W'],
+            out_spec=['B', 'C', 'Color', 'D', 'H', 'W'],
             **super_kwargs)
 
+        assert n_components % 3 == 0, f'{n_components} is not divisible by 3.'
+        self.n_images = n_components // 3
+
     def visualize(self, embedding, **_):
-        return pca(embedding, output_dimensions=3)
+        result = pca(embedding, output_dimensions=3 * self.n_images)
+        result = result.contiguous().view((result.shape[0], self.n_images, 3) + result.shape[2:])
+        return result
 
 
 class MaskedPcaVisualizer(BaseVisualizer):
-    def __init__(self, ignore_label=None, n_components=3, background_label=0.0, **super_kwargs):
+    def __init__(self, ignore_label=None, n_components=3, background_label=0, **super_kwargs):
         """
         More general version of PcaVisualizer that allows for an ignore mask. Data points which have the ignore_label in
-        the Segmentation are ignored in the PcaAnalysis.
+        the Segmentation are ignored in the Pca Analysis.
 
         ----------
         ignore_label : int or float
