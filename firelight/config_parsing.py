@@ -9,6 +9,7 @@ from .visualizers.visualizers import \
     IdentityVisualizer, \
     PcaVisualizer, \
     MaskedPcaVisualizer, \
+    TsneVisualizer, \
     SegmentationVisualizer, \
     InputVisualizer, \
     TargetVisualizer, \

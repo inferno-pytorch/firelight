@@ -132,10 +132,13 @@ def collapse_dim(tensor, to_collapse, collapse_into=None, spec=None, return_spec
     else:
         assert collapse_into in spec, f'{collapse_into}, {spec}'
         i_to = spec.index(collapse_into)
-        i_to = i_to + 1 if i_from > i_to else i_to
-        tensor = tensor.permute(_moving_permutation(len(spec), i_from, i_to))
-        new_shape = tensor.shape[:i_to-1] + (tensor.shape[i_to-1] * tensor.shape[i_to],) + tensor.shape[i_to+1:]
-        tensor = tensor.contiguous().view(new_shape)
+        if i_to != i_from:
+            i_to = i_to + 1 if i_from > i_to else i_to
+            tensor = tensor.permute(_moving_permutation(len(spec), i_from, i_to))
+            new_shape = tensor.shape[:i_to-1] + (tensor.shape[i_to-1] * tensor.shape[i_to],) + tensor.shape[i_to+1:]
+            tensor = tensor.contiguous().view(new_shape)
+        else:
+            i_from = -1  # suppress deletion of spec later
     if return_spec:
         new_spec = [spec[i] for i in range(len(spec)) if i is not i_from]
         return tensor, new_spec
@@ -194,7 +197,7 @@ def convert_dim(tensor, in_spec, out_spec=None, collapsing_rules=None, uncollaps
 
     # construct out_spec if not given
     if out_spec is None:
-        print([d for d in in_spec if d not in to_collapse], collapse_into, uncollapsed_dims)
+        # print([d for d in in_spec if d not in to_collapse], collapse_into, uncollapsed_dims)
         out_spec = join_specs([d for d in in_spec if d not in to_collapse], collapse_into, uncollapsed_dims)
 
     # bring tensor's spec in same order as out_spec, with dims not present in out_spec at the end
@@ -462,7 +465,11 @@ class SpecFunction:
                 assert d not in self.internal_out_spec, \
                     f'spec {d} is an internal_out_spec, cannot be an extra given spec'
 
-        collapsing_rules = [(d, self.collapse_into.get(d, self.collapse_into.get('rest'))) for d in extra_given_in_specs]
+        #if 'B' in extra_given_in_specs:
+        #    del extra_given_in_specs['B']
+
+        collapsing_rules = [(d, self.collapse_into.get(d, self.collapse_into.get('rest')))
+                            for d in extra_given_in_specs]
         for kw in self.internal_in_specs:
             assert kw in kwargs, \
                 f"Missing key '{kw}'. Provided keys were {kwargs.keys()} in SpecFunction of class {type(self)}"
@@ -488,10 +495,12 @@ class SpecFunction:
         assert isinstance(result, torch.Tensor), f'unexpected type: {type(result)}'
 
         # uncollapse the previously collapsed dims
+        dims_to_uncollapse = list(extra_given_in_specs.keys())
         for i in reversed(range(len(extra_given_in_specs))):
-            d = list(extra_given_in_specs.keys())[i]
-            if d == 'B' and d in self.internal_out_spec:  # skip if function 'consumes' parallel dimension
+            d = dims_to_uncollapse[i]
+            if d == 'B' and (d in self.internal_out_spec or not self.parallel):  # skip if function 'consumes' parallel dimension
                 continue
+
             length = extra_given_in_specs[d]
             result, spec = uncollapse_dim(
                 result,
