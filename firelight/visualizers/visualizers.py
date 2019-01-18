@@ -2,6 +2,7 @@ from .base import BaseVisualizer
 import torch
 import numpy as np
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 from torch.nn.functional import pad
 
 
@@ -294,6 +295,38 @@ class MaskedPcaVisualizer(BaseVisualizer):
             if masked[i] is not None:
                 result[i, :, m] = masked[i]
         result = result.contiguous().view((result.shape[0], self.n_images, 3) + result.shape[2:])
+        return result
+
+
+class TsneVisualizer(BaseVisualizer):
+    def __init__(self, joint_dims=None, n_components=3, **super_kwargs):
+        """
+        TSNE Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
+        to 3 which are interpreted as RGB.
+
+        Parameters
+        ----------
+        super_kwargs
+        """
+        joint_dims = ['D', 'H', 'W'] if joint_dims is None else joint_dims
+        assert 'C' not in joint_dims
+        super(TsneVisualizer, self).__init__(
+            in_specs={'embedding': joint_dims + ['C']},
+            out_spec=joint_dims + ['C', 'Color'],
+            **super_kwargs
+        )
+        assert n_components % 3 == 0, f'{n_components} is not divisible by 3.'
+        self.n_images = n_components // 3
+
+    def visualize(self, embedding, **_):
+        shape = embedding.shape
+        # bring embedding into shape (n_samples, n_features) as requested by TSNE
+        embedding = embedding.contiguous().view(-1, shape[-1])
+
+        result = TSNE(n_components=self.n_images * 3).fit_transform(embedding.cpu().numpy())
+        result = torch.Tensor(result).float().to(embedding.device)
+        # revert flattening, add color dimension
+        result = result.contiguous().view(*shape[:-1], self.n_images, 3)
         return result
 
 
