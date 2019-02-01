@@ -310,7 +310,7 @@ def apply_slice_mapping(mapping, states, include_old_states=True):
 class BaseVisualizer(SpecFunction):
     def __init__(self, input_mapping=None, colorize=True,
                  cmap=None, background_label=None, background_color=None, opacity=1.0, colorize_jointly=None,
-                 value_range=None, verbose=False,
+                 value_range=None, verbose=False, scaling_options=None,
                  **super_kwargs):
         """
         Base class for all visualizers.
@@ -366,7 +366,8 @@ class BaseVisualizer(SpecFunction):
         self.colorize = colorize
         self.colorization_func = Colorize(cmap=cmap, background_color=background_color,
                                           background_label=background_label, opacity=opacity,
-                                          value_range=value_range, colorize_jointly=colorize_jointly)
+                                          value_range=value_range, colorize_jointly=colorize_jointly,
+                                          scaling_options=scaling_options)
         self.verbose = verbose
 
     def __call__(self, return_spec=False, **states):

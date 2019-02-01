@@ -4,7 +4,7 @@ import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import torch
 import numpy as np
-
+import collections
 
 def hsv_to_rgb(h, s, v):  # TODO: remove colorsys dependency
     """
@@ -134,9 +134,86 @@ def _add_alpha(img):
     return torch.cat([img, torch.ones(alpha_shape, dtype=img.dtype)], dim=-1)
 
 
+class ScaleTensor(SpecFunction):
+    def __init__(self, value_range=None, scale_robust=False, quantiles=(0.05, 0.95), keep_centered=False):
+        super(ScaleTensor, self).__init__(
+            in_specs={'tensor': ['Pixels']},
+            out_spec=['Pixels']
+        )
+        # TODO: decouple quantlies from scale axis (allow e.g. 0.1 -> 0.05)
+        self.value_range = value_range
+        self.scale_robust = scale_robust
+        self.quantiles = quantiles
+        self.keep_centered = keep_centered
+        self.eps = 1e-12
+
+    def quantile_scale(self, tensor, quantiles=None, return_params=False):
+        quantiles = self.quantiles if quantiles is None else quantiles
+        q_min = np.percentile(tensor.numpy(), 100 * self.quantiles[0])
+        q_max = np.percentile(tensor.numpy(), 100 * self.quantiles[1])
+        scale = (quantiles[1] - quantiles[0]) / max(q_max - q_min, self.eps)
+        offset = quantiles[0] - q_min * scale
+        # scaled tensor is tensor * scale + offset
+        if return_params:
+            return scale, offset
+        else:
+            return tensor * scale + offset
+
+    def scale_tails(self, tensor):
+        t_min, t_max = torch.min(tensor), torch.max(tensor)
+        if t_min < 0:
+            ind = tensor < self.quantiles[0]
+            tensor[ind] -= t_min
+            tensor[ind] *= self.quantiles[0] / max(self.quantiles[0] - t_min, self.eps)
+        if t_max > 1:
+            ind = tensor > self.quantiles[1]
+            tensor[ind] -= self.quantiles[1]
+            tensor[ind] *= (1 - self.quantiles[1]) / max(t_max - self.quantiles[1], self.eps)
+            tensor[ind] += self.quantiles[1]
+        return tensor
+
+    def internal(self, tensor):
+        if not self.keep_centered:
+            if self.value_range is not None or not self.scale_robust:
+                # just scale to [0, 1], nothing fancy
+                value_range = (torch.min(tensor), torch.max(tensor)) if self.value_range is None else self.value_range
+                tensor -= value_range[0]
+                tensor /= max(value_range[1] - value_range[0], self.eps)
+            else:
+                quantiles = list(self.quantiles)
+                tensor = self.quantile_scale(tensor, quantiles=quantiles)
+                # if less than the whole range is used, do so
+                rescale = False
+                if torch.min(tensor) > 0:
+                    quantiles[0] = 0
+                    rescale = True
+                if torch.max(tensor) < 1:
+                    quantiles[1] = 0
+                    rescale = True
+                if rescale:
+                    tensor = self.quantile_scale(tensor, quantiles=quantiles)
+                # if the tails lie outside the range, rescale them
+                tensor = self.scale_tails(tensor)
+
+        else:
+            if self.value_range is not None or not self.scale_robust:
+                value_range = (torch.min(tensor), torch.max(tensor)) if self.value_range is None else self.value_range
+                value_range = (-max(*value_range), max(*value_range))
+                tensor -= value_range[0]
+                tensor /= max(value_range[1] - value_range[0], self.eps)
+            else:
+                quantile = self.quantiles[0] if isinstance(self.quantiles, (tuple, list)) else self.quantiles
+                symmetrized_tensor = torch.cat([tensor, -tensor])
+                scale, offset = self.quantile_scale(symmetrized_tensor, (quantile, 1-quantile), return_params=True)
+                tensor = tensor * scale + offset
+                tensor = self.scale_tails(tensor)
+        tensor = tensor.clamp(0, 1)
+        return tensor
+
+
 class Colorize(SpecFunction):
     def __init__(self, background_label=None, background_color=None, opacity=1.0, value_range=None, cmap=None,
-                 colorize_jointly=None):
+                 colorize_jointly=None, scaling_options=None):
         """
         Constructs an object used for the colorization / color normalization of tensors. The output tensor has a
         length 4 RGBA output dimension labeled 'Color'.
@@ -176,7 +253,11 @@ class Colorize(SpecFunction):
             self.background_color += (1,)
         assert len(self.background_color) == 4, f'{len(self.background_color)}'
         self.opacity = opacity
-        self.value_range = value_range
+
+        scaling_options = dict() if scaling_options is None else scaling_options
+        if value_range is not None:
+            scaling_options['value_range'] = value_range
+        self.scale_tensor = ScaleTensor(**scaling_options)
 
     def add_alpha(self, img):
         return _add_alpha(img)
@@ -187,14 +268,7 @@ class Colorize(SpecFunction):
         # shape Color, Batch, Pixel
         for i in range(min(tensor.shape[0], 3)):  # do not scale alpha channel
             for j in range(tensor.shape[1]):
-                if self.value_range is None:
-                    minimum_value = torch.min(tensor[i, j])
-                    maximum_value = torch.max(tensor[i, j])
-                else:
-                    minimum_value, maximum_value = self.value_range
-                tensor[i, j] -= minimum_value
-                tensor[i, j] /= max(maximum_value - minimum_value, 1e-12)
-            tensor[i] = tensor[i].clamp(0, 1)
+                tensor[i, j] = self.scale_tensor(tensor=(tensor[i, j], ['Pixels']))
         tensor = tensor.permute(1, 2, 0)
         return tensor
 
@@ -243,6 +317,8 @@ class Colorize(SpecFunction):
 
 
 if __name__ == '__main__':
+
+    print('-'*100)
     tensor = torch.Tensor([0, 1, 2, 3, 4])
     colorize = Colorize(cmap='inferno')
     out, spec = colorize(tensor=(tensor, 'W'), out_spec=['W', 'Color'], return_spec=True)
