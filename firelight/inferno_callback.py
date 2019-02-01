@@ -20,6 +20,8 @@ def _remove_alpha(tensor, background_brightness=1):
 
 
 class VisualizationCallback(Callback):
+    TRAINER_STATE_PREFIXES = ('training', 'validation')
+
     def __init__(self, visualizers):
         super(VisualizationCallback, self).__init__()
         assert isinstance(visualizers, dict)
@@ -35,14 +37,18 @@ class VisualizationCallback(Callback):
         return self.trainer.logger
 
     def get_trainer_states(self):
-        states = ['inputs', 'error', 'target', 'prediction', 'loss']
-        pre = 'training' if self.trainer.model.training else 'validation'
+        current_pre = self.TRAINER_STATE_PREFIXES[0 if self.trainer.model.training else 1]
+        ignore_pre = self.TRAINER_STATE_PREFIXES[1 if self.trainer.model.training else 0]
         result = {}
-        for s in states:
-            state = self.trainer.get_state(pre + '_' + s)
+        for key in self.trainer._state:
+            if key.startswith(ignore_pre):
+                continue
+            state = self.trainer.get_state(key)
+            if key.startswith(current_pre):
+                key = '_'.join(key.split('_')[1:])  # remove current prefix
             if isinstance(state, torch.Tensor):
                 state = state.cpu().detach().clone().float()  # logging is done on the cpu, all tensors are floats
-            result[s] = state
+            result[key] = state
         return result
 
     def do_logging(self, **_):
