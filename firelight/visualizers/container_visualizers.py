@@ -177,7 +177,7 @@ class ImageGridVisualizer(ContainerVisualizer):
             result = _padded_concatenate(images, dim=-2, **self.get_pad_kwargs('V'))
 
         if self.upsampling_factor is not 1:
-            result = F.upsample(
+            result = F.interpolate(
                 result.permute(2, 0, 1)[None],
                 scale_factor=self.upsampling_factor,
                 mode='nearest')
@@ -330,14 +330,15 @@ class StackVisualizer(ContainerVisualizer):
         super_kwargs :
         """
         super(StackVisualizer, self).__init__(
-            in_spec=['B'],
+            in_spec=[stack_dim, 'B'],
             out_spec=[stack_dim, 'B'],
             *super_args, **super_kwargs
         )
 
     def combine(self, *visualizations, **_):
         assert len(visualizations) > 0
-        assert all(v.shape == visualizations[0].shape for v in visualizations[1:]), \
-            f'Not all input visualizations have the same shape: {[v.shape for v in visualizations]}'
-        result = torch.stack(visualizations, dim=0)
+        assert all(v.shape[1:] == visualizations[0].shape[1:] for v in visualizations[1:]), \
+            f'Not all input visualizations have the same shape, apart from at dimension 0: ' \
+            f'{[v.shape for v in visualizations]}'
+        result = torch.cat(visualizations, dim=0)
         return result
