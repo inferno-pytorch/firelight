@@ -228,7 +228,7 @@ def pca(embedding, output_dimensions=3, reference=None, center_data=False):
 
 
 class PcaVisualizer(BaseVisualizer):
-    def __init__(self, n_components=3, **super_kwargs):
+    def __init__(self, n_components=3, joint_specs=('D', 'H', 'W'), **super_kwargs):
         """
         PCA Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
         to 3 which are interpreted as RGB.
@@ -238,8 +238,8 @@ class PcaVisualizer(BaseVisualizer):
         super_kwargs
         """
         super(PcaVisualizer, self).__init__(
-            in_specs={'embedding': ['B', 'C', 'D', 'H', 'W']},
-            out_spec=['B', 'C', 'Color', 'D', 'H', 'W'],
+            in_specs={'embedding': ['B', 'C'] + list(joint_specs)},
+            out_spec=['B', 'C', 'Color'] + list(joint_specs),
             **super_kwargs)
 
         assert n_components % 3 == 0, f'{n_components} is not divisible by 3.'
@@ -315,7 +315,7 @@ class TsneVisualizer(BaseVisualizer):
             out_spec=joint_dims + ['C', 'Color'],
             **super_kwargs
         )
-        assert n_components % 3 == 0, f'{n_components} is not divisible by 3.'
+        assert n_components % 3 == 0, f'{n_components} is  not divisible by 3.'
         self.n_images = n_components // 3
 
     def visualize(self, embedding, **_):
