@@ -38,7 +38,7 @@ logging.basicConfig(format='[+][%(asctime)-15s][VISUALIZATION]'
                            ' %(message)s',
                     stream=sys.stdout,
                     level=logging.INFO)
-logger = logging.getLogger(__name__)
+parsing_logger = logging.getLogger(__name__)
 
 
 def get_single_key_value_pair(d):
@@ -105,11 +105,15 @@ def get_visualizer(config, indentation=0):
     name, kwargs = get_single_key_value_pair(config)
     # get the visualizer class from its name
     visualizer = get_visualizer_class(name)
-    logger.info(f'Parsing {"  "*indentation}{visualizer.__name__}')
+    parsing_logger.info(f'Parsing {"  "*indentation}{visualizer.__name__}')
     if issubclass(visualizer, ContainerVisualizer):  # container visualizer: parse sub-visualizers first
-        assert isinstance(kwargs['visualizers'], list), f'{kwargs["visualizers"]}, {type(kwargs["visualizers"])}'
+        child_visualizer_config = kwargs['visualizers']
+        assert isinstance(child_visualizer_config, (list, dict)), \
+            f'{child_visualizer_config}, {type(child_visualizer_config)}'
+        if isinstance(child_visualizer_config, dict):  # if dict, convert do list
+            child_visualizer_config = [{key: value} for key, value in child_visualizer_config.items()]
         child_visualizers = []
-        for c in kwargs['visualizers']:
+        for c in child_visualizer_config:
             v = get_visualizer(c, indentation + 1)
             assert isinstance(v, BaseVisualizer), f'Could not parse visualizer: {c}'
             child_visualizers.append(v)
