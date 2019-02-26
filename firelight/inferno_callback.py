@@ -23,7 +23,7 @@ class VisualizationCallback(Callback):
     VISUALIZATION_PHASES = ['training', 'validation']
     TRAINER_STATE_PREFIXES = ('training', 'validation')
 
-    def __init__(self, logging_config, log_during=None):
+    def __init__(self, logging_config, log_during=None, logger=None, writer=None):
         super(VisualizationCallback, self).__init__()
         assert isinstance(logging_config, dict)
         self.logging_config = logging_config  # dictionary containing the visualizers as values with their names as keys
@@ -43,12 +43,25 @@ class VisualizationCallback(Callback):
 
         # parameters specifying logging iterations
         # self.logged_last = {'train': None, 'val': None}
+        self._logger = None
+        self._writer = None
 
     @property
     def logger(self):
-        assert self.trainer is not None
-        assert hasattr(self.trainer, 'logger')
-        return self.trainer.logger
+        if self._logger is None:
+            # get tensorboard logger from trainer
+            assert self.trainer is not None
+            assert hasattr(self.trainer, 'logger')
+            self._logger = self.trainer.logger
+        return self._logger
+
+    @property
+    def writer(self):
+        if self._writer is None:
+            # get writer from the logger
+            assert hasattr(self.logger, 'writer')
+            self._writer = self.logger.writer
+        return self._writer
 
     def get_trainer_states(self):
         current_pre = self.TRAINER_STATE_PREFIXES[0 if self.trainer.model.training else 1]
@@ -67,7 +80,7 @@ class VisualizationCallback(Callback):
 
     def do_logging(self, phase, **_):
         assert isinstance(self.logger, TensorboardLogger)
-        writer = self.logger.writer
+        writer = self.writer
         pre = 'training' if self.trainer.model.training else 'validation'
         for name, config in self.logging_config.items():
             if phase not in config['log_during']:  # skip visualizer if logging not requested for this phase
@@ -79,10 +92,12 @@ class VisualizationCallback(Callback):
         logger.info(f'Logging finished')
 
     def end_of_training_iteration(self, **_):
+        last_match_value = self.logger.log_images_every._last_match_value
         log_now = self.logger.log_images_every.match(
             iteration_count=self.trainer.iteration_count,
             epoch_count=self.trainer.epoch_count,
             persistent=False)
+        self.logger.log_images_every._last_match_value = last_match_value
         if log_now:
             self.do_logging('training')
 
