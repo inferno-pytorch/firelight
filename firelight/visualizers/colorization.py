@@ -1,7 +1,7 @@
 from ..utils.dim_utils import SpecFunction, convert_dim
 import matplotlib.cm as cm
 import matplotlib.colors as colors
-import matplotlib.pyplot as plt
+from matplotlib.pyplot import get_cmap
 import torch
 import numpy as np
 import collections
@@ -111,7 +111,7 @@ def _from_matplotlib_cmap(cmap):
         callable
     """
     if isinstance(cmap, str):
-        cmap = plt.get_cmap(cmap)
+        cmap = get_cmap(cmap)
     cNorm = colors.Normalize(vmin=0, vmax=1)
     scalarMap = cm.ScalarMappable(norm=cNorm, cmap=cmap)
     return scalarMap.to_rgba
