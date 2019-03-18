@@ -308,7 +308,7 @@ def apply_slice_mapping(mapping, states, include_old_states=True):
 
 
 class BaseVisualizer(SpecFunction):
-    def __init__(self, input_mapping=None, colorize=True,
+    def __init__(self, input=None, input_mapping=None, colorize=True,
                  cmap=None, background_label=None, background_color=None, opacity=1.0, colorize_jointly=None,
                  value_range=None, verbose=False, scaling_options=None,
                  **super_kwargs):
@@ -318,7 +318,10 @@ class BaseVisualizer(SpecFunction):
 
         Parameters
         ----------
-        input_mapping : dict
+        input: list or None
+            If the visualizer has one input only, this can be used to specify which state to pass (in the format of a
+            value in input_mapping).
+        input_mapping : dict or list
             Dictionary specifying slicing and renaming of states for visualization (see apply_slice_mapping above).
         colorize : bool
             If False, the addition/rescaling of a 'Color' dimension to RGBA in [0,1] is suppressed.
@@ -357,11 +360,23 @@ class BaseVisualizer(SpecFunction):
         """
         in_specs = super_kwargs.get('in_specs')
         super(BaseVisualizer, self).__init__(**super_kwargs)
+
         # always have the requested states in input mapping, to make sure their shape is inferred (from DEFAULT_SPECS)
         # if not specified.
         in_specs = {} if in_specs is None else in_specs
         self.input_mapping = {name: name for name in in_specs}
+        # if 'input' is specified, map it to the first and only name in in_specs
+        if input is not None:
+            assert len(in_specs) == 1, \
+                f"Cannot use 'input' in Visualizer with multiple in_specs. Please pass input mapping containing " \
+                f"{list(in_specs.keys())} to {type(self).__name__}."
+            name = get_single_key_value_pair(in_specs)[0]
+            self.input_mapping[name] = input
+        # finally set the input_mapping as specified in 'input_mapping'
         if input_mapping is not None:
+            if input is not None:
+                assert list(in_specs.keys())[0] not in input_mapping, \
+                    f"State specified in both 'input' and 'input_mapping' Please choose one."
             self.input_mapping.update(input_mapping)
         self.colorize = colorize
         self.colorization_func = Colorize(cmap=cmap, background_color=background_color,
