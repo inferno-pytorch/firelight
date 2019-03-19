@@ -135,12 +135,13 @@ def _add_alpha(img):
 
 
 class ScaleTensor(SpecFunction):
-    def __init__(self, value_range=None, scale_robust=False, quantiles=(0.05, 0.95), keep_centered=False):
+    def __init__(self, invert=False, value_range=None, scale_robust=False, quantiles=(0.05, 0.95), keep_centered=False):
         super(ScaleTensor, self).__init__(
             in_specs={'tensor': ['Pixels']},
             out_spec=['Pixels']
         )
         # TODO: decouple quantlies from scale axis (allow e.g. 0.1 -> 0.05)
+        self.invert = invert
         self.value_range = value_range
         self.scale_robust = scale_robust
         self.quantiles = quantiles
@@ -173,6 +174,8 @@ class ScaleTensor(SpecFunction):
         return tensor
 
     def internal(self, tensor):
+        if self.invert:
+            tensor *= -1
         if not self.keep_centered:
             if self.value_range is not None or not self.scale_robust:
                 # just scale to [0, 1], nothing fancy
