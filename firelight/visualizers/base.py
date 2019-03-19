@@ -293,7 +293,7 @@ def apply_slice_mapping(mapping, states, include_old_states=True):
         # finally map the state
         if isinstance(state, torch.Tensor):
             assert len(state.shape) == len(spec), f'{state.shape}, {spec} ({map_from_key})'
-            state = state[map_from_slices]
+            state = state[map_from_slices].clone()
         elif isinstance(state, list):
             assert all(len(s.shape) == len(spec) for s in state), f'{[s.shape for s in state]}, {spec} ({map_from_key})'
             state = [s[map_from_slices] for s in state]
