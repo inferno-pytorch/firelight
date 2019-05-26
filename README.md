@@ -17,14 +17,7 @@ Why you will keep using firelight:
 
 ## Installation
 
-### From conda
-
-Firelight is available on conda-forge for python > 3.6 and all operating systems:
-```bash
-conda install -c pytorch -c conda-forge firelight
-```
-
-### From source
+### From source (recommended to get the newest version)
 On python 3.6+:
 
 ```bash
@@ -33,6 +26,12 @@ git clone https://github.com/inferno-pytorch/firelight
 cd firelight/
 # Install
 python setup.py install
+```
+### From conda
+
+Firelight is available on conda-forge for python > 3.6 and all operating systems:
+```bash
+conda install -c pytorch -c conda-forge firelight
 ```
 
 ## Example
