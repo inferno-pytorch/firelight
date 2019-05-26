@@ -120,18 +120,28 @@ def get_visualizer(config, indentation=0):
         kwargs['visualizers'] = child_visualizers
 
     # TODO: add example with nested visualizers
+    def parse_if_visualizer(config):
+        if not (isinstance(config, dict) and len(config) == 1):
+            return None
+        # check if the key is the name of a visualizer
+        try:
+            get_visualizer_class(iter(config.items()).__next__()[0])
+        except AssertionError:
+            return None
+        # parse the visualizer
+        return get_visualizer(config, indentation+1)
+
+    # check if any input in 'input_mapping' should be parsed as visualizer
     input_mapping = kwargs.get('input_mapping', {})
     for map_to, map_from in input_mapping.items():
-        # visualizer has to be specified as one element dict
-        if not (isinstance(map_from, dict) and len(map_from) == 1):
-            continue
-        name, _ = get_single_key_value_pair(map_from)
-        # check if the name can be parsed as a visualizer
-        try:
-            _ = get_visualizer_class(name)
-        except AssertionError:
-            continue
-        # parse the visualizer
-        input_mapping[map_to] = get_visualizer(map_from, indentation+1)
+        nested_visualizer = parse_if_visualizer(map_from)
+        if nested_visualizer is not None:
+            input_mapping[map_to] = nested_visualizer
+
+    # check if 'input' should be parsed as visualizer
+    if kwargs.get('input') is not None:
+        nested_visualizer = parse_if_visualizer(kwargs.get('input'))
+        if nested_visualizer is not None:
+            kwargs['input'] = nested_visualizer
 
     return visualizer(**kwargs)
