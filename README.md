@@ -53,32 +53,27 @@ RowVisualizer: # stack the outputs of child visualizers as rows of an image grid
   visualizers:
     # First row: Ground truth
     - IdentityVisualizer:
-        input_mapping:
-          tensor: 'target' # show the target
+        input: 'target' # show the target
 
     # Second row: Raw input
     - IdentityVisualizer:
-        input_mapping:
-          tensor: ['input', C: '0'] # Show the first channel ('C') of the input.
+        input: ['input', C: '0'] # Show the first channel ('C') of the input.
         cmap: viridis  # Name of a matplotlib colormap.
 
     # Third row: Prediction with segmentation boarders on top.
     - OverlayVisualizer:
         visualizers:
           - CrackedEdgeVisualizer: # Show borders of target segmentation
-              input_mapping:
-                segmentation: 'target'
+              input: 'target'
               width: 2
               opacity: 0.5 # Make output only partially opaque.
           - IdentityVisualizer: # prediction
-              input_mapping:
-                tensor: 'prediction'
+              input: 'prediction'
               cmap: Spectral
 
     # Fourth row: Foreground probability, calculated by sigmoid on prediction
     - IdentityVisualizer:
-        input_mapping:
-          tensor: ['prediction', pre: 'sigmoid'] # Apply sigmoid function from torch.nn.functional before visualize.
+        input: ['prediction', pre: 'sigmoid'] # Apply sigmoid function from torch.nn.functional before visualize.
         value_range: [0, 1] # Scale such that 0 is white and 1 is black. If not specified, whole range is used.
 ```
 
