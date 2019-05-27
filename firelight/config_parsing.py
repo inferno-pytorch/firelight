@@ -10,6 +10,7 @@ from .visualizers.visualizers import \
     PcaVisualizer, \
     MaskedPcaVisualizer, \
     TsneVisualizer, \
+    UmapVisualizer, \
     SegmentationVisualizer, \
     InputVisualizer, \
     TargetVisualizer, \
