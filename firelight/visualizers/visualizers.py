@@ -203,8 +203,8 @@ def pca(embedding, output_dimensions=3, reference=None, center_data=False):
     -------
         torch.Tensor
     """
-    # embedding shape: first two dimensions correspond to batchsize and embedding dim, so
-    # shape should be (B, E, H, W) or (B, E, D, H, W).
+    # embedding shape: first two dimensions correspond to batchsize and embedding(==channel) dim,
+    # so shape should be (B, C, H, W) or (B, C, D, H, W).
     _pca = PCA(n_components=output_dimensions)
     # reshape embedding
     output_shape = list(embedding.shape)
