@@ -19,6 +19,9 @@ setuptools.setup(
         "scikit-image",
         "torch",
     ],
+    extras_requires={
+    'umap': ['umap-learn>=0.3.8'],
+    },
     license="Apache Software License 2.0",
     packages=setuptools.find_packages(),
 )

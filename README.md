@@ -17,14 +17,7 @@ Why you will keep using firelight:
 
 ## Installation
 
-### From conda
-
-Firelight is available on conda-forge for python > 3.6 and all operating systems:
-```bash
-conda install -c pytorch -c conda-forge firelight
-```
-
-### From source
+### From source (recommended to get the newest version)
 On python 3.6+:
 
 ```bash
@@ -33,6 +26,12 @@ git clone https://github.com/inferno-pytorch/firelight
 cd firelight/
 # Install
 python setup.py install
+```
+### From conda
+
+Firelight is available on conda-forge for python > 3.6 and all operating systems:
+```bash
+conda install -c pytorch -c conda-forge firelight
 ```
 
 ## Example
@@ -64,13 +63,11 @@ RowVisualizer: # stack the outputs of child visualizers as rows of an image grid
     - OverlayVisualizer:
         visualizers:
           - CrackedEdgeVisualizer: # Show borders of target segmentation
-              input_mapping:
-                segmentation: 'target'
+              input: 'target'
               width: 2
               opacity: 0.7 # Make output only partially opaque.
           - IdentityVisualizer: # prediction
-              input_mapping:
-                tensor: 'prediction'
+              input: 'prediction'
               cmap: Spectral
 
     # Fourth row: Foreground probability, calculated by sigmoid on prediction
