@@ -349,8 +349,9 @@ class TsneVisualizer(BaseVisualizer):
         result = result.contiguous().view(*shape[:-1], self.n_images, 3)
         return result
 
+
 class UmapVisualizer(BaseVisualizer):
-    def __init__(self, joint_dims=None, n_components=3, n_neighbors = 15, min_dist = 0.1, **super_kwargs):
+    def __init__(self, joint_dims=None, n_components=3, n_neighbors=15, min_dist=0.1, **super_kwargs):
         """
         UMAP Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
         to 3 which are interpreted as RGB.
@@ -366,7 +367,7 @@ class UmapVisualizer(BaseVisualizer):
         super_kwargs
 
         """
-        assert umap_available == True, "You tried to use the UmapVisualizer without having UMAP installed."
+        assert umap_available, "You tried to use the UmapVisualizer without having UMAP installed."
         joint_dims = ['D', 'H', 'W'] if joint_dims is None else joint_dims
         assert 'C' not in joint_dims
         super(UmapVisualizer, self).__init__(
@@ -378,7 +379,7 @@ class UmapVisualizer(BaseVisualizer):
         self.min_dist = min_dist
         self.n_neighbors = n_neighbors
 
-        assert n_components % 3 == 0, f'{n_components} is  not divisible by 3.'
+        assert n_components % 3 == 0, f'{n_components} is not divisible by 3.'
         self.n_images = n_components // 3
 
     def visualize(self, embedding, **_):
@@ -386,15 +387,13 @@ class UmapVisualizer(BaseVisualizer):
         # bring embedding into shape (n_samples, n_features) as requested by TSNE
         embedding = embedding.contiguous().view(-1, shape[-1])
 
-        result = umap.UMAP( n_components=self.n_images * 3,
-                            min_dist = self.min_dist,
-                            n_neighbors = self.n_neighbors).fit_transform(embedding.cpu().numpy())
+        result = umap.UMAP(n_components=self.n_images * 3,
+                           min_dist=self.min_dist,
+                           n_neighbors=self.n_neighbors).fit_transform(embedding.cpu().numpy())
         result = torch.Tensor(result).float().to(embedding.device)
         # revert flattening, add color dimension
         result = result.contiguous().view(*shape[:-1], self.n_images, 3)
         return result
-
-
 
 
 class NormVisualizer(BaseVisualizer):
