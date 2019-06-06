@@ -227,6 +227,7 @@ def pca(embedding, output_dimensions=3, reference=None, center_data=False):
     return torch.stack([torch.from_numpy(x.T) for x in pca_output]).reshape(output_shape)
 
 
+# TODO: make PcaVisualizer take one embedding to fit and one to transform
 class PcaVisualizer(BaseVisualizer):
     def __init__(self, n_components=3, joint_specs=('D', 'H', 'W'), **super_kwargs):
         """
@@ -234,7 +235,7 @@ class PcaVisualizer(BaseVisualizer):
         to 3 which are interpreted as RGB.
 
         Parameters
-        ----------
+        ---------- 
         super_kwargs
         """
         super(PcaVisualizer, self).__init__(
@@ -246,6 +247,12 @@ class PcaVisualizer(BaseVisualizer):
         self.n_images = n_components // 3
 
     def visualize(self, embedding, **_):
+        # if there are not enough channels, add some zeros
+        if embedding.shape[1] < 3 * self.n_images:
+            expanded_embedding = torch.zeros(embedding.shape[0], 3 * self.n_images, *embedding.shape[2:])\
+                .float().to(embedding.device)
+            expanded_embedding[:, :embedding.shape[1]] = embedding
+            embedding = expanded_embedding
         result = pca(embedding, output_dimensions=3 * self.n_images)
         result = result.contiguous().view((result.shape[0], self.n_images, 3) + result.shape[2:])
         return result
@@ -277,6 +284,13 @@ class MaskedPcaVisualizer(BaseVisualizer):
         self.n_images = n_components // 3
 
     def visualize(self, embedding, segmentation, **_):
+        # if there are not enough channels, add some zeros
+        if embedding.shape[1] < 3 * self.n_images:
+            expanded_embedding = torch.zeros(embedding.shape[0], 3 * self.n_images, *embedding.shape[2:])\
+                .float().to(embedding.device)
+            expanded_embedding[:, :embedding.shape[1]] = embedding
+            embedding = expanded_embedding
+
         if self.ignore_label is None:
             mask = torch.ones((embedding.shape[0],) + embedding.shape[2:])
         else:
