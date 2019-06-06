@@ -322,9 +322,9 @@ class Colorize(SpecFunction):
 if __name__ == '__main__':
 
     print('-'*100)
-    tensor = torch.Tensor([0, 1, 2, 3, 4])
+    test_tensor = torch.Tensor([0, 1, 2, 3, 4])
     colorize = Colorize(cmap='inferno')
-    out, spec = colorize(tensor=(tensor, 'W'), out_spec=['W', 'Color'], return_spec=True)
+    out, spec = colorize(tensor=(test_tensor, 'W'), out_spec=['W', 'Color'], return_spec=True)
     print(out)
     print(out.shape)
     print(spec)
