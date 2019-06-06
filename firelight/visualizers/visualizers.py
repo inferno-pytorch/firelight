@@ -168,7 +168,7 @@ class ThresholdVisualizer(BaseVisualizer):
             **super_kwargs
         )
         self.threshold = threshold
-        assert mode in ThresholdVisualizer.MODES, f'Mode {mode} not supported. Use one of {MODES}'
+        assert mode in ThresholdVisualizer.MODES, f'Mode {mode} not supported. Use one of {ThresholdVisualizer.MODES}'
         self.mode = mode
 
     def visualize(self, tensor, **_):
