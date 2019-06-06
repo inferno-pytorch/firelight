@@ -4,7 +4,7 @@ import matplotlib.colors as colors
 from matplotlib.pyplot import get_cmap
 import torch
 import numpy as np
-import collections
+
 
 def hsv_to_rgb(h, s, v):  # TODO: remove colorsys dependency
     """
@@ -301,7 +301,7 @@ class Colorize(SpecFunction):
             else:  # tensor is discrete with not all values in {0, 1}, hence color the segments randomly
                 tensor = torch.Tensor(colorize_segmentation(tensor[..., 0].numpy().astype(np.int32)))
         elif tensor.shape[-1] in [3, 4]:
-            assert self.cmap is None
+            assert self.cmap is None, f'Tensor already has Color dimension, cannot use cmap'
             tensor = self.normalize_colors(tensor)
         else:
             assert False, f'{tensor.shape}'

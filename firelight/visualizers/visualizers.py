@@ -4,6 +4,12 @@ import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from torch.nn.functional import pad
+try:
+    import umap
+    umap_available = True
+except ImportError:
+    umap_available = False
+    print("Could not import UMAP package. UmapVisualizer is not available.")
 
 
 class IdentityVisualizer(BaseVisualizer):
@@ -197,8 +203,8 @@ def pca(embedding, output_dimensions=3, reference=None, center_data=False):
     -------
         torch.Tensor
     """
-    # embedding shape: first two dimensions corresponde to batchsize and embedding dim, so
-    # shape should be (B, E, H, W) or (B, E, D, H, W).
+    # embedding shape: first two dimensions correspond to batchsize and embedding(==channel) dim,
+    # so shape should be (B, C, H, W) or (B, C, D, H, W).
     _pca = PCA(n_components=output_dimensions)
     # reshape embedding
     output_shape = list(embedding.shape)
@@ -315,7 +321,7 @@ class MaskedPcaVisualizer(BaseVisualizer):
 class TsneVisualizer(BaseVisualizer):
     def __init__(self, joint_dims=None, n_components=3, **super_kwargs):
         """
-        TSNE Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
+        tSNE Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
         to 3 which are interpreted as RGB.
 
         Parameters
@@ -342,6 +348,53 @@ class TsneVisualizer(BaseVisualizer):
         # revert flattening, add color dimension
         result = result.contiguous().view(*shape[:-1], self.n_images, 3)
         return result
+
+class UmapVisualizer(BaseVisualizer):
+    def __init__(self, joint_dims=None, n_components=3, n_neighbors = 15, min_dist = 0.1, **super_kwargs):
+        """
+        UMAP Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
+        to 3 which are interpreted as RGB.
+
+        Parameters
+        ----------
+        see https://umap-learn.readthedocs.io/en/latest/parameters.html
+        n_neighbors: controls how many neighbors are considered for distance
+                        estimation on the manifold. Low number focuses on local
+                        distance, large numbers more on global structure, default 15
+        min_dist: minimum distance of points after dimension reduction, default 0.1
+
+        super_kwargs
+
+        """
+        assert umap_available == True, "You tried to use the UmapVisualizer without having UMAP installed."
+        joint_dims = ['D', 'H', 'W'] if joint_dims is None else joint_dims
+        assert 'C' not in joint_dims
+        super(UmapVisualizer, self).__init__(
+            in_specs={'embedding': joint_dims + ['C']},
+            out_spec=joint_dims + ['C', 'Color'],
+            **super_kwargs
+        )
+
+        self.min_dist = min_dist
+        self.n_neighbors = n_neighbors
+
+        assert n_components % 3 == 0, f'{n_components} is  not divisible by 3.'
+        self.n_images = n_components // 3
+
+    def visualize(self, embedding, **_):
+        shape = embedding.shape
+        # bring embedding into shape (n_samples, n_features) as requested by TSNE
+        embedding = embedding.contiguous().view(-1, shape[-1])
+
+        result = umap.UMAP( n_components=self.n_images * 3,
+                            min_dist = self.min_dist,
+                            n_neighbors = self.n_neighbors).fit_transform(embedding.cpu().numpy())
+        result = torch.Tensor(result).float().to(embedding.device)
+        # revert flattening, add color dimension
+        result = result.contiguous().view(*shape[:-1], self.n_images, 3)
+        return result
+
+
 
 
 class NormVisualizer(BaseVisualizer):
@@ -433,4 +486,3 @@ class CrackedEdgeVisualizer(BaseVisualizer):
             padded1 = pad(segmentation, padding1)
             directional_boundaries.append((padded0 != padded1)[slicing])
         return torch.stack(directional_boundaries, dim=0).max(dim=0)[0].float()
-

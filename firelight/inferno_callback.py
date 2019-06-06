@@ -23,14 +23,14 @@ class VisualizationCallback(Callback):
     VISUALIZATION_PHASES = ['training', 'validation']
     TRAINER_STATE_PREFIXES = ('training', 'validation')
 
-    def __init__(self, logging_config, log_during=None, logger=None, writer=None):
+    def __init__(self, logging_config, log_during='all'):
         super(VisualizationCallback, self).__init__()
         assert isinstance(logging_config, dict)
         self.logging_config = logging_config  # dictionary containing the visualizers as values with their names as keys
 
         # parse phases during which to log the individual visualizers
         for i, name in enumerate(logging_config):
-            phases = logging_config[name].get('log_during', 'all')
+            phases = logging_config[name].get('log_during', log_during)
             if isinstance(phases, str):
                 if phases == 'all':
                     phases = self.VISUALIZATION_PHASES
