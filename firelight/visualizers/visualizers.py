@@ -486,3 +486,63 @@ class CrackedEdgeVisualizer(BaseVisualizer):
             padded1 = pad(segmentation, padding1)
             directional_boundaries.append((padded0 != padded1)[slicing])
         return torch.stack(directional_boundaries, dim=0).max(dim=0)[0].float()
+
+
+def _upsample_axis(tensor, axis, factor):
+    shape = tensor.shape
+    tensor = tensor.unsqueeze(axis + 1)
+    tensor = tensor.expand(shape[:axis+1] + (factor,) + shape[axis+1:])
+    tensor = tensor.reshape(shape[:axis] + (shape[axis] * factor,) + shape[axis+1:])
+    return tensor
+
+
+class UpsamplingVisualizer(BaseVisualizer):
+    def __init__(self, specs, shape=None, factors=None, **super_kwargs):
+        """
+        Upsample a tensor along a list of axis (specified via specs) to a specified shape, by a list of specified
+        factors or the shape of a reference tensor (given as an optional argument to visualize).
+
+        Parameters
+        ----------
+        specs : list of str
+            Specs of the axes to upsample along.
+        shape : None or int or list of int
+            Shape after upsampling.
+        factors: None or int or list of int
+            Factors to upsample by.
+        super_kwargs
+        """
+        self.specs = list(specs)
+        self.out_shape = [shape] * len(specs) if isinstance(shape, int) else shape
+        self.factors = [factors] * len(specs) if isinstance(factors, int) else shape
+        assert self.out_shape is None or self.factors is None, \
+            f'Pleas specify at most one of shape and factors'
+        self.from_reference = self.out_shape is None and self.factors is None
+        super(UpsamplingVisualizer, self).__init__(
+            in_specs={
+                'tensor': ['B'] + self.specs,
+                'reference': ['B'] + self.specs
+            },
+            out_spec=['B'] + self.specs,
+            **super_kwargs
+        )
+
+    def visualize(self, tensor, reference=None, **_):
+        if self.from_reference:
+            assert reference is not None, \
+                f'Please supply a reference when neither upsampled shape nor upsampling factors are specified at init.'
+            out_shape = reference.shape[1:]
+        else:
+            if self.out_shape is not None:
+                out_shape = self.out_shape
+            else:
+                out_shape = [s * f for s, f in zip(tensor.shape[1:], self.factors)]
+        out_shape = np.array(out_shape)
+        in_shape = np.array(tensor.shape[1:])
+        assert all(out_shape % in_shape == 0), f'Cannot upsample from {in_shape} to {out_shape}.'
+        factors = (out_shape / in_shape).astype(int)
+        for i, factor in enumerate(factors):
+            tensor = _upsample_axis(tensor, i+1, factor)
+        return tensor
+
+

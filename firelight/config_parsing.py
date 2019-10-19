@@ -22,7 +22,8 @@ from .visualizers.visualizers import \
     ImageVisualizer, \
     NormVisualizer, \
     DiagonalSplitVisualizer, \
-    CrackedEdgeVisualizer
+    CrackedEdgeVisualizer, \
+    UpsamplingVisualizer
 
 # List of available container visualizers (visualizers acting on outputs of child visualizers)
 from .visualizers.container_visualizers import \
