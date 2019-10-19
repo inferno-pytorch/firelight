@@ -305,8 +305,9 @@ class MaskedPcaVisualizer(BaseVisualizer):
             assert mask.shape[1] == 1, f'{mask.shape}'
             mask = mask[:, 0]
         mask = mask.bool()
+
         masked = [embedding[i, :, m] for i, m in enumerate(mask)]
-        masked = [None if d.nelement() == 0 else pca(d[None], 3 * self.n_images, center_data=True)[0]
+        masked = [None if d.nelement() < self.n_images * 3 else pca(d[None], 3 * self.n_images, center_data=True)[0]
                   for d in masked]
         output_shape = list(embedding.shape)
         output_shape[1] = 3 * self.n_images
