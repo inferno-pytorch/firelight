@@ -56,6 +56,9 @@ class VisualizationCallback(Callback):
                 key = '_'.join(key.split('_')[1:])  # remove current prefix
             if isinstance(state, torch.Tensor):
                 state = state.cpu().detach().clone().float()  # logging is done on the cpu, all tensors are floats
+            if isinstance(state, (tuple, list)) and all([isinstance(t, torch.Tensor) for t in state]):
+                state = list(t.cpu().detach().clone().float() for t in state)
+
             result[key] = state
         return result
 
