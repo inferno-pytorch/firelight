@@ -5,7 +5,6 @@ from skimage.filters import gaussian
 
 
 def get_example_states():
-    print('Generating example data..')
     # generate some toy foreground/background segmentation
     batchsize = 5  # we will only visualize 3 of the 5samples
     size = 128
@@ -30,7 +29,6 @@ def get_example_states():
         'prediction': (torch.Tensor(prediction).float(), 'BDHW'),
         'embedding': (torch.Tensor(embedding).float(), 'BCDHW'),
     }
-    print('Example data generated.')
     return state_dict
 
 

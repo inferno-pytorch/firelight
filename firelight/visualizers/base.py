@@ -203,11 +203,26 @@ def apply_slice_mapping(mapping, states, include_old_states=True):
     """
     Add/Replace tensors in the dictionary 'states' as specified with the dictionary 'mapping'. Each key in mapping
     corresponds to a state in the resulting dictionary, and each value describes:
-     - from which tensors in 'states' this state is grabbed (e.g. 'prediction')
-     - if a list of tensors is grabbed: which list index should be used (e.g 'index': 0)
-     - what slice of the grabbed tensor should be used (e.g 'B': '0', 'C': '0:3')
-     - what function in torch.nn.functional should be applied to the tensor after the slicing (e.g. 'pre': 'sigmoid')
+
+    - from which tensors in 'states' this state is grabbed (e.g. 'prediction')
+    - if a list of tensors is grabbed: which list index should be used (e.g 'index': 0)
+    - what slice of the grabbed tensor should be used (e.g 'B': '0', 'C': '0:3')
+    - what function in torch.nn.functional should be applied to the tensor after the slicing (e.g. 'pre': 'sigmoid')
+
     These arguments can be specified in one dictionary or a list of length one dictionaries.
+
+    Parameters
+    ----------
+    mapping: dict
+        Dictionary describing the mapping of states
+    states: dict
+        Dictionary of states to be mapped. Values must be either tensors, or tuples of the form (tensor, spec).
+    include_old_states: bool
+        Whether or not to include states in the ouput dictionary, on which no operations were performed.
+    Returns dict
+        Dictionary of mapped states
+    -------
+
     """
     mapping = copy(mapping)
     # assumes states are tuples of (tensor, spec) if included in mapping
@@ -340,18 +355,25 @@ class BaseVisualizer(SpecFunction):
         colorize_jointly : List of str
             A list containing names of dimensions. Sets of data points separated only in these dimensions will be scaled
             equally at colorization (such that they lie in [0, 1]). Not used if 'value_range' is specified.
-            Default: ['W', 'H', 'D'] (=[Width, Height, Depth])
+
+            Default: :code:`['W', 'H', 'D']` (standing for Width, Height, Depth)
+
             Examples:
-                - color_jointly = ['W', 'H'] :      Scale each image separately
-                - color_jointly = ['B', 'W', 'H'] : Scale images corresponding to different samples in the batch
-                                                    equally, such that their intensities are comparable
+
+            - :code:`color_jointly = ['W', 'H']` :      Scale each image separately
+            - :code:`color_jointly = ['B', 'W', 'H']` : Scale images corresponding to different samples in the batch
+              equally, such that their intensities are comparable
+
         value_range : List
             If specified, the automatic scaling for colorization is overridden. Has to have 2 elements.
             The interval [value_range[0], value_range[1]] will be mapped to [0, 1] by a linear transformation.
+
             Examples:
-                - If your network has the sigmoid function as a final layer, the data does not need to be scaled
-                  further. Hence value_range = [0, 1] should be specified.
-                - If your network produces normalized outputs, you could set value_range = [-1, 1].
+
+            - If your network has the sigmoid function as a final layer, the data does not need to be scaled
+              further. Hence :code:`value_range = [0, 1]` should be specified.
+            - If your network produces normalized outputs, you could set :code:`value_range = [-1, 1]`.
+
         verbose : bool
             If true, information about the state dict will be printed during visualization.
         super_kwargs:
@@ -388,13 +410,15 @@ class BaseVisualizer(SpecFunction):
     def __call__(self, return_spec=False, **states):
         """
         Visualizes the data specified in the state dictionary, following these steps:
-            - Apply the input mapping,
-            - Reshape the states needed for visualization as specified by in_specs at initialization. Extra dimensions
-              are 'put into' the batch dimension, missing dimensions are added (This is handled in the base class,
-              SpecFunction)
-            - Apply self.visualize,
-            - Reshape the result, with manipulations applied on the input in reverse
-            - If not suppressed, colorize the result, resulting in RGBA values in [0, 1]
+
+        - Apply the input mapping,
+        - Reshape the states needed for visualization as specified by in_specs at initialization. Extra dimensions
+          are 'put into' the batch dimension, missing dimensions are added (This is handled in the base class,
+          SpecFunction)
+        - Apply self.visualize,
+        - Reshape the result, with manipulations applied on the input in reverse,
+        - If not disabled by setting :code:`colorize=False`, colorize the result,
+          leading to RGBA output with values in :math:`[0, 1]`.
 
         Parameters
         ----------
@@ -405,7 +429,9 @@ class BaseVisualizer(SpecFunction):
 
         Returns
         -------
-            torch.Tensor or (torch.Tensor, list), depending on the value of return_spec
+        result: torch.Tensor or (torch.Tensor, list)
+            Either only the resulting visualization, or a tuple of the visualization and the corresponding spec
+            (depending on the value of :code:`return_spec`).
 
         """
         logger.info(f'Calling {self.__class__.__name__}.')

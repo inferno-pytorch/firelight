@@ -71,28 +71,35 @@ class ImageGridVisualizer(ContainerVisualizer):
         Parameters
         ----------
         row_specs: list
-            List of dimension names. The dimensions of child visualizations (outputs of child visualizers) will be put
-            into the height dimension of the resulting image in this order. In other words, data points only separated
-            in dimensions at the beginning of this list will be right next to each other, while data points towards the
-            back will be further away from each other.
-            A special dimension name is 'V'. It stands for the dimension differentiating between the child visualizers.
-            Example:
-            Given the tensor
-                [[1,  2 , 3 ],
-                 [10, 20, 30]]
-            with shape (2, 3) and say dimension names ['A', 'B']. This is the order of the rows given the two possible
-            row_specs (suppose column_specs = []):
-                - row_specs = ['B', 'A']: [1, 2, 3, 10, 20, 30]
-                - row_specs = ['A', 'B']: [1, 10, 2, 20, 3, 30]
+            List of dimension names. These dimensions of the outputs of child visualizers will be put
+            into the height dimension of the resulting image, according to the order in the list.
+
+            In other words, data points only separated in dimensions at the beginning of this list will be right next to
+            each other, while data points separated in dimensions towards the back will be further away from each other
+            in the output image.
+
+            A special dimension name is 'V' (for visualizers).
+            It stands for the dimension differentiating between the child visualizers.
+
+            **Example**:
+            Given the tensor :code:`[[1,  2 , 3 ], [10, 20, 30]]` with shape (2, 3)
+            and dimension names :code:`['A', 'B']`, this is the order of the rows, depending on the specified row_specs
+            (suppose :code:`column_specs = []`):
+
+            - If :code:`row_specs = ['B', 'A']`, the output will be :code:`[1, 2, 3, 10, 20, 30]`
+            - If :code:`row_specs = ['A', 'B']`, the output will be :code:`[1, 10, 2, 20, 3, 30]`
+
         column_specs : list
             As row_specs but for columns of resulting image. Each dimension of child visualizations has to either
             occur in row_specs or column_specs. The intersection of row_specs and column specs has to be empty.
         pad_width : int or dict
             Determines the width of padding when concatenating images. Depending on type:
-                - int:  Padding will have this width for concatenations along all dimensions, apart from H and W (no
-                        padding between adjacent pixels in image)
-                - dict: Keys are dimension names, values the padding width when concatenating along them. Special key
-                        'rest' determines default value if given (otherwise no padding is used as default).
+
+            - int:  Padding will have this width for concatenations along all dimensions, apart from H and W (no
+                    padding between adjacent pixels in image)
+            - dict: Keys are dimension names, values the padding width when concatenating along them. Special key
+                    'rest' determines default value if given (otherwise no padding is used as default).
+
         pad_value : int or dict
             Determines the color of padding when concatenating images. Colors can be given as floats (gray values) or
             list of RGB / RGBA values. If dict, interpreted as pad_width
@@ -259,9 +266,21 @@ class RiffleVisualizer(ContainerVisualizer):
     def __init__(self, riffle_dim='C', *super_args, **super_kwargs):
         """
         Riffles the outputs of its child visualizers along specified dimension.
-        Example:
-            Riffle the channels of a multidimensional target and prediction, such that corresponding images are closer
-            spatially. The config would look like:
+
+        For a way to also scale target and prediction equally, have a look at StackVisualizer (if the range of
+        values is known, you can also just use value_range: [a, b] for the child visualizers
+
+        Parameters
+        ----------
+        riffle_dim : str
+            Name of dimension which is to be riffled
+        super_args :
+        super_kwargs :
+
+        Examples
+        --------
+        Riffle the channels of a multidimensional target and prediction, such that corresponding images are closer
+        spatially. A possible configuration file would look like this::
 
             RiffleVisualizer:
                 riffle_dim: 'C'
@@ -273,15 +292,6 @@ class RiffleVisualizer(ContainerVisualizer):
                         input_mapping:
                             image: 'prediction'
 
-            For a way to also scale target and prediction equally, have a look at StackVisualizer (if the range of
-            values is known, you can also just use value_range: [a, b] for the child visualizers
-
-        Parameters
-        ----------
-        riffle_dim : str
-            Name of dimension which is to be riffled
-        super_args :
-        super_kwargs :
         """
         super(RiffleVisualizer, self).__init__(
             in_spec=[riffle_dim, 'B'],
@@ -302,25 +312,7 @@ class StackVisualizer(ContainerVisualizer):
     def __init__(self, stack_dim='S', *super_args, **super_kwargs):
         """
         Stacks the outputs of its child visualizers along specified dimension.
-        Example:
-            Stack a multidimensional target and prediction along an extra dimension, e.g. 'TP'. In order to make target
-            and prediction images comparable, disable colorization in the child visualizers and colorize only in the
-            StackVisualizer, jointly coloring along 'TP', thus scaling target and prediction images by the same factors.
-            The config would look like this:
 
-                StackVisualizer:
-                    stack_dim: 'TP'
-                    colorize: True
-                    color_jointly: ['H', 'W', 'TP']  # plus other dimensions you want to scale equally, e.g. D = depth
-                    visualizers:
-                        - ImageVisualizer:
-                            input_mapping:
-                                image: 'target'
-                            colorize = False
-                        - ImageVisualizer:
-                            input_mapping:
-                                image: 'target'
-                            colorize = True
         Parameters
         ----------
         stack_dim : str
@@ -328,6 +320,29 @@ class StackVisualizer(ContainerVisualizer):
             should have this dimension.
         super_args :
         super_kwargs :
+
+        Example
+        -------
+        Stack a multidimensional target and prediction along an extra dimension, e.g. 'TP'. In order to make target
+        and prediction images comparable, disable colorization in the child visualizers and colorize only in the
+        StackVisualizer, jointly coloring along 'TP', thus scaling target and prediction images by the same factors.
+        The config would look like this::
+
+            StackVisualizer:
+                stack_dim: 'TP'
+                colorize: True
+                color_jointly: ['H', 'W', 'TP']  # plus other dimensions you want to scale equally, e.g. D = depth
+                visualizers:
+                    - ImageVisualizer:
+                        input_mapping:
+                            image: 'target'
+                        colorize = False
+                    - ImageVisualizer:
+                        input_mapping:
+                            image: 'target'
+                        colorize = True
+
+
         """
         super(StackVisualizer, self).__init__(
             in_spec=[stack_dim, 'B'],

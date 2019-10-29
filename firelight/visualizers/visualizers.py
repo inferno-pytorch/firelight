@@ -9,7 +9,6 @@ try:
     umap_available = True
 except ImportError:
     umap_available = False
-    print("Could not import UMAP package. UmapVisualizer is not available.")
 
 
 class IdentityVisualizer(BaseVisualizer):
@@ -270,6 +269,7 @@ class MaskedPcaVisualizer(BaseVisualizer):
         More general version of PcaVisualizer that allows for an ignore mask. Data points which have the ignore_label in
         the Segmentation are ignored in the Pca Analysis.
 
+        Parameters
         ----------
         ignore_label : int or float
             Data points with this label in the segmentation are ignored.

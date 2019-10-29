@@ -20,6 +20,16 @@ def join_specs(*specs):
     Returns
     -------
         list
+
+    Examples
+    --------
+
+    >>> from firelight.utils.dim_utils import join_specs
+    >>> join_specs(['B', 'C'], ['B', 'H', 'W'])
+    ['B', 'C', 'H', 'W']
+    >>> join_specs(['B', 'C'], ['H', 'B', 'W'])
+    ['B', 'C', 'H', 'W']
+
     """
     if len(specs) != 2:
         return join_specs(specs[0], join_specs(*specs[1:]))
@@ -375,40 +385,43 @@ def equalize_shapes(tensor_spec_pairs):
 
 
 class SpecFunction:
-    def __init__(self, in_specs=None, out_spec=None, collapse_into=None, suppress_spec_adjustment=True):
-        """
-        Class that wraps a function, specified in the method 'internal', to be applicable to tensors with of almost
-        arbitrary dimensionality. This is achieved by applying the following steps when the function is called:
-            -   The inputs are reshaped and their dimensions are permuted to match their respective order of dimensions
-                specified in in_specs. Dimensions present in inputs but not requested by in_specs are collapsed in the
-                batch dimension, labeled 'B' (per default, see collapse_into). Dimensions not present in the inputs but
-                requested by in_specs are added (with length 1).
-            -   If the batch dimension 'B' is present in the in_specs, 'internal' is applied on the inputs, returning
-                a tensor with dimensions as specified in out_spec.
-                If 'B' is not present in the in_specs, this dimension is iterated over and each slice is individually
-                passed through 'internal'. The individual outputs are then stacked, recovering the 'B' dimension.
-            -   Finally, the output is reshaped. The dimensions previously collapsed into 'B' are uncollapsed, and
-                dimensions added in the first step are removed.
+    """
+    Class that wraps a function, specified in the method 'internal', to be applicable to tensors with of almost
+    arbitrary dimensionality. This is achieved by applying the following steps when the function is called:
 
-        Parameters
-        ----------
-        in_specs : dict
-            Dictionary specifying how the dimensionality and order of dimensions of input arguments of internal()
-            should be adjusted.
-            Keys:   Names of input arguments (as in signature of internal())
-            Values: List of dimension names. The tensor supplied to internal under the name of the corresponding key
-                    will have this order of dimensions.
-        out_spec : list
-            List of dimension names of the output of internal()
-        collapse_into : list
-            If given, the default behaviour of collapsing any extra given dimensions of states into the batch dimension
-            'B' is overridden. Each entry of collapse_into must be a two element tuple, with the first element being the
-            dimension to collapse, the second one being the dimension to collapse it into (prior to passing the tensor
-            to internal() ).
-        suppress_spec_adjustment : bool
-            Argument to completely suppress the adjustment of dimensionalities in call(), for example if it is taken
-            care of in call() of derived class (see firelight.visualizers.base.ConatainerVisualizer)
-        """
+    - The inputs are reshaped and their dimensions are permuted to match their respective order of dimensions
+      specified in in_specs. Dimensions present in inputs but not requested by in_specs are collapsed in the
+      batch dimension, labeled 'B' (per default, see collapse_into). Dimensions not present in the inputs but
+      requested by in_specs are added (with length 1).
+
+    - If the batch dimension 'B' is present in the in_specs, 'internal' is applied on the inputs, returning
+      a tensor with dimensions as specified in out_spec.
+      If 'B' is not present in the in_specs, this dimension is iterated over and each slice is individually
+      passed through 'internal'. The individual outputs are then stacked, recovering the 'B' dimension.
+
+    - Finally, the output is reshaped. The dimensions previously collapsed into 'B' are uncollapsed, and
+      dimensions added in the first step are removed.
+
+    Parameters
+    ----------
+    in_specs : dict
+        Dictionary specifying how the dimensionality and order of dimensions of input arguments of internal()
+        should be adjusted.
+        - Keys:   Names of input arguments (as in signature of internal())
+        - Values: List of dimension names. The tensor supplied to internal under the name of the corresponding key
+          will have this order of dimensions.
+    out_spec : list
+        List of dimension names of the output of internal()
+    collapse_into : list
+        If given, the default behaviour of collapsing any extra given dimensions of states into the batch dimension
+        'B' is overridden. Each entry of collapse_into must be a two element tuple, with the first element being the
+        dimension to collapse, the second one being the dimension to collapse it into (prior to passing the tensor
+        to internal() ).
+    suppress_spec_adjustment : bool
+        Argument to completely suppress the adjustment of dimensionalities in call(), for example if it is taken
+        care of in call() of derived class (see firelight.visualizers.base.ConatainerVisualizer)
+    """
+    def __init__(self, in_specs=None, out_spec=None, collapse_into=None, suppress_spec_adjustment=True):
         if in_specs is None or out_spec is None:
             assert in_specs is None and out_spec is None, 'You probably want to supply both in_specs and an out_spec'
             assert suppress_spec_adjustment is True, 'You probably want to supply both in_specs and an out_spec'
