@@ -11,8 +11,8 @@ Welcome to firelight's documentation!
    :caption: Contents:
 
    firelight
-   modules
-
+   auto_examples/index
+  
 
 Indices and tables
 ==================

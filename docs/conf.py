@@ -32,12 +32,32 @@ release = '0.1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+        'sphinx.ext.autodoc',
         'sphinx.ext.napoleon',
+        'sphinx.ext.intersphinx',
         'sphinx.ext.doctest',
         'sphinx.ext.viewcode',
+        'sphinx_gallery.gen_gallery',
 ]
 napoleon_include_init_with_doc = True
 napoleon_include_special_with_doc = True
+
+# interphinx configuration
+intersphinx_mapping = {
+        'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+        'python': ('https://docs.python.org/', None),
+        'torch': ('https://pytorch.org/docs/master/', None),
+}
+
+# paths for sphinx gallery
+sphinx_gallery_conf = {
+        'examples_dir': '../examples',
+        'gallery_dirs': 'auto_examples',
+        'reference_url': {
+            # The module you locally document uses None
+            'sphinx_gallery': None,
+        }
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

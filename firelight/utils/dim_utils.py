@@ -407,11 +407,15 @@ class SpecFunction:
     in_specs : dict
         Dictionary specifying how the dimensionality and order of dimensions of input arguments of internal()
         should be adjusted.
-        - Keys:   Names of input arguments (as in signature of internal())
+
+        - Keys: Names of input arguments (as in signature of internal())
+
         - Values: List of dimension names. The tensor supplied to internal under the name of the corresponding key
           will have this order of dimensions.
+
     out_spec : list
         List of dimension names of the output of internal()
+
     collapse_into : list
         If given, the default behaviour of collapsing any extra given dimensions of states into the batch dimension
         'B' is overridden. Each entry of collapse_into must be a two element tuple, with the first element being the
