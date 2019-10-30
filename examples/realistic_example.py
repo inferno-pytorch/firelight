@@ -63,7 +63,7 @@ for name, (tensor, spec) in states.items():
 # The best way to construct a complex visualizer to show all the tensors in a
 # structured manner is to use a configuration file.
 #
-# We will use this one:
+# We will use the following one:
 #
 # .. literalinclude:: ../../examples/example_config_0.yml
 #    :language: yaml

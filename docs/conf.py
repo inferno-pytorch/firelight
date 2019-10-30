@@ -56,6 +56,18 @@ sphinx_gallery_conf = {
         'reference_url': {
             # The module you locally document uses None
             'sphinx_gallery': None,
+        },
+        'binder': {
+             # Required keys
+             'org': 'https://github.com',
+             'repo': 'firelight',
+             'branch': 'docs',  # Can be any branch, tag, or commit hash. Use a branch that hosts your docs.
+             'binderhub_url': 'https://mybinder.org',  # Any URL of a binderhub deployment. Must be full URL (e.g. https://mybinder.org).
+             'dependencies': [],
+             # Optional keys
+             'filepath_prefix': '../../examples', # A prefix to prepend to any filepaths in Binder links.
+             'notebooks_dir': 'binder',  # Jupyter notebooks for Binder will be copied to this directory (relative to built documentation root).
+             'use_jupyter_lab': False  # Whether Binder links should start Jupyter Lab instead of the Jupyter Notebook interface.
         }
 }
 
