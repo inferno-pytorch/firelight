@@ -68,6 +68,20 @@ templates_path = ['_templates']
 exclude_patterns = []
 
 
+from unittest.mock import MagicMock
+
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+MOCK_MODULES = [
+        'inferno.trainers.callbacks.base',
+        'inferno.trainers.callbacks.logging.tensorboard',
+]
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
