@@ -1,0 +1,6 @@
+pyyaml>=3.12x,
+matplotlib
+numpy
+scikit-learn
+scikit-image
+torch
