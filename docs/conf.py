@@ -53,22 +53,24 @@ intersphinx_mapping = {
 sphinx_gallery_conf = {
         'examples_dir': '../examples',
         'gallery_dirs': 'auto_examples',
+        'filename_pattern': '/*.py',
         'reference_url': {
             # The module you locally document uses None
             'sphinx_gallery': None,
         },
-        'binder': {
-             # Required keys
-             'org': 'https://github.com',
-             'repo': 'firelight',
-             'branch': 'docs',  # Can be any branch, tag, or commit hash. Use a branch that hosts your docs.
-             'binderhub_url': 'https://mybinder.org',  # Any URL of a binderhub deployment. Must be full URL (e.g. https://mybinder.org).
-             'dependencies': [],
-             # Optional keys
-             'filepath_prefix': '../../examples', # A prefix to prepend to any filepaths in Binder links.
-             'notebooks_dir': 'binder',  # Jupyter notebooks for Binder will be copied to this directory (relative to built documentation root).
-             'use_jupyter_lab': False  # Whether Binder links should start Jupyter Lab instead of the Jupyter Notebook interface.
-        }
+        # binder will does not work with readthedocs, see https://github.com/sphinx-gallery/sphinx-gallery/pull/505.
+        # 'binder': {
+        #      # Required keys
+        #      'org': 'https://github.com',
+        #      'repo': 'firelight',
+        #      'branch': 'docs',  # Can be any branch, tag, or commit hash. Use a branch that hosts your docs.
+        #      'binderhub_url': 'https://mybinder.org',  # Any URL of a binderhub deployment. Must be full URL (e.g. https://mybinder.org).
+        #      'dependencies': 'requirements.txt',
+        #      # Optional keys
+        #      # 'filepath_prefix': 'docs/',  # A prefix to prepend to any filepaths in Binder links.
+        #      'notebooks_dir': 'binder',  # Jupyter notebooks for Binder will be copied to this directory (relative to built documentation root).
+        #      'use_jupyter_lab': False  # Whether Binder links should start Jupyter Lab instead of the Jupyter Notebook interface.
+        # }
 }
 
 # Add any paths that contain templates here, relative to this directory.
