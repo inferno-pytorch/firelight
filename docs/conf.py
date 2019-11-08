@@ -37,11 +37,22 @@ extensions = [
         'sphinx.ext.intersphinx',
         'sphinx.ext.doctest',
         'sphinx.ext.viewcode',
+        'sphinx.ext.graphviz',
+        'sphinx.ext.inheritance_diagram',
+        #'sphinx.ext.autosummary',
         'sphinx_gallery.gen_gallery',
         'sphinx_paramlinks',
+        'autodocsumm',
+        'sphinx_automodapi.automodapi',
 ]
+
+# autodoc_default_options = {
+#     'autosummary': True,
+# }
+
 napoleon_include_init_with_doc = True
 napoleon_include_special_with_doc = True
+#autosummary_generate = True
 
 # interphinx configuration
 intersphinx_mapping = {
@@ -78,6 +89,10 @@ doctest_global_setup = """
 import torch
 from firelight.utils.dim_utils import *
 from firelight.config_parsing import *
+
+from firelight.visualizers.base import *
+from firelight.visualizers.visualizers import *
+from firelight.visualizers.container_visualizers import *
 """
 
 # Add any paths that contain templates here, relative to this directory.

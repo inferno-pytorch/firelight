@@ -12,15 +12,15 @@ except ImportError:
 
 
 class IdentityVisualizer(BaseVisualizer):
-    def __init__(self, **super_kwargs):
-        """
-        Visualizer that returns the tensor passed to it. Useful to visualize each channel of a tensor as a separate
-        greyscale image.
+    """
+    Visualizer that returns the tensor passed to it. Useful to visualize each channel of a tensor as a separate
+    greyscale image.
 
-        Parameters
-        ----------
-        super_kwargs : dict
-        """
+    Parameters
+    ----------
+    super_kwargs : dict
+    """
+    def __init__(self, **super_kwargs):
         super(IdentityVisualizer, self).__init__(
             in_specs={'tensor': 'B'},
             out_spec='B',
@@ -32,6 +32,9 @@ class IdentityVisualizer(BaseVisualizer):
 
 
 class ImageVisualizer(BaseVisualizer):
+    """
+    Same as :class:`IdentityVisualizer`, but acting on 'image'.
+    """
     def __init__(self, **super_kwargs):
         super(ImageVisualizer, self).__init__(
             in_specs={'image': 'B'},
@@ -44,6 +47,9 @@ class ImageVisualizer(BaseVisualizer):
 
 
 class InputVisualizer(BaseVisualizer):
+    """
+    Same as :class:`IdentityVisualizer`, but acting on 'input'.
+    """
     def __init__(self, **super_kwargs):
         super(InputVisualizer, self).__init__(
             in_specs={'input': 'B'},
@@ -56,6 +62,9 @@ class InputVisualizer(BaseVisualizer):
 
 
 class TargetVisualizer(BaseVisualizer):
+    """
+    Same as :class:`IdentityVisualizer`, but acting on 'target'.
+    """
     def __init__(self, **super_kwargs):
         super(TargetVisualizer, self).__init__(
             in_specs={'target': 'B'},
@@ -68,6 +77,9 @@ class TargetVisualizer(BaseVisualizer):
 
 
 class PredictionVisualizer(BaseVisualizer):
+    """
+    Same as :class:`IdentityVisualizer`, but acting on 'prediction'.
+    """
     def __init__(self, **super_kwargs):
         super(PredictionVisualizer, self).__init__(
             in_specs={'prediction': 'B'},
@@ -104,14 +116,14 @@ class SegmentationVisualizer(BaseVisualizer):
 
 
 class RGBVisualizer(BaseVisualizer):
-    def __init__(self, **super_kwargs):
-        """
-        Visualize the input tensor as RGB images. If the input has n * 3 channels, n color images will be returned.
+    """
+    Visualize the input tensor as RGB images. If the input has n * 3 channels, n color images will be returned.
 
-        Parameters
-        ----------
-        super_kwargs
-        """
+    Parameters
+    ----------
+    super_kwargs
+    """
+    def __init__(self, **super_kwargs):
         super(RGBVisualizer, self).__init__(
             in_specs={'tensor': ['B', 'C']},
             out_spec=['B', 'C', 'Color'],
@@ -126,16 +138,16 @@ class RGBVisualizer(BaseVisualizer):
 
 
 class MaskVisualizer(BaseVisualizer):
-    def __init__(self, mask_label, **super_kwargs):
-        """
-        Returns a mask that is 1 where the input image equals the mask label passed at initialization, and 0 elsewhere
+    """
+    Returns a mask that is 1 where the input image equals the mask label passed at initialization, and 0 elsewhere
 
-        Parameters
-        ----------
-        mask_label : float
-            Label to be used for the construction of the mask
-        super_kwargs
-        """
+    Parameters
+    ----------
+    mask_label : float
+        Label to be used for the construction of the mask
+    super_kwargs
+    """
+    def __init__(self, mask_label, **super_kwargs):
         super(MaskVisualizer, self).__init__(
             in_specs={'tensor': ['B']},
             out_spec=['B'],
@@ -148,19 +160,20 @@ class MaskVisualizer(BaseVisualizer):
 
 
 class ThresholdVisualizer(BaseVisualizer):
+    """
+    Returns a mask resulting from a thresholding of the input tensor.
+
+    Parameters
+    ----------
+    threshold : int or float
+    mode : str
+        one of the modes in MODES, specifying how to threshold
+    super_kwargs
+    """
+
     MODES = ['greater', 'smaller', 'greater_equal', 'smaller_equal']
 
     def __init__(self, threshold, mode='greater_equal', **super_kwargs):
-        """
-        Returns a mask resulting from a thresholding of the input tensor.
-
-        Parameters
-        ----------
-        threshold : int or float
-        mode : str
-            one of the modes in MODES, specifying how to threshold
-        super_kwargs
-        """
         super(ThresholdVisualizer, self).__init__(
             in_specs={'tensor': ['B']},
             out_spec=['B'],
@@ -234,15 +247,16 @@ def pca(embedding, output_dimensions=3, reference=None, center_data=False):
 
 # TODO: make PcaVisualizer take one embedding to fit and one to transform
 class PcaVisualizer(BaseVisualizer):
-    def __init__(self, n_components=3, joint_specs=('D', 'H', 'W'), **super_kwargs):
-        """
-        PCA Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
-        to 3 which are interpreted as RGB.
+    """
+    PCA Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
+    to 3 which are interpreted as RGB.
 
-        Parameters
-        ---------- 
-        super_kwargs
-        """
+    Parameters
+    ----------
+    super_kwargs
+
+    """
+    def __init__(self, n_components=3, joint_specs=('D', 'H', 'W'), **super_kwargs):
         super(PcaVisualizer, self).__init__(
             in_specs={'embedding': ['B', 'C'] + list(joint_specs)},
             out_spec=['B', 'C', 'Color'] + list(joint_specs),
@@ -264,22 +278,23 @@ class PcaVisualizer(BaseVisualizer):
 
 
 class MaskedPcaVisualizer(BaseVisualizer):
-    def __init__(self, ignore_label=None, n_components=3, background_label=0, **super_kwargs):
-        """
-        More general version of PcaVisualizer that allows for an ignore mask. Data points which have the ignore_label in
-        the Segmentation are ignored in the Pca Analysis.
+    """
+    More general version of PcaVisualizer that allows for an ignore mask. Data points which have the ignore_label in
+    the Segmentation are ignored in the Pca Analysis.
 
-        Parameters
-        ----------
-        ignore_label : int or float
-            Data points with this label in the segmentation are ignored.
-        n_components : int
-            Number of components for PCA. Has to be divisible by 3, such that a whole number of RGB images can be
-            returned.
-        background_label : float
-            As in BaseVisualizer, here used by default to color the ignored region.
-        super_kwargs
-        """
+    Parameters
+    ----------
+    ignore_label : int or float
+        Data points with this label in the segmentation are ignored.
+    n_components : int
+        Number of components for PCA. Has to be divisible by 3, such that a whole number of RGB images can be
+        returned.
+    background_label : float
+        As in BaseVisualizer, here used by default to color the ignored region.
+    super_kwargs
+    
+    """
+    def __init__(self, ignore_label=None, n_components=3, background_label=0, **super_kwargs):
         super(MaskedPcaVisualizer, self).__init__(
             in_specs={'embedding': 'BCDHW', 'segmentation': 'BCDHW'},
             out_spec=['B', 'C', 'Color', 'D', 'H', 'W'],
@@ -320,15 +335,15 @@ class MaskedPcaVisualizer(BaseVisualizer):
 
 
 class TsneVisualizer(BaseVisualizer):
-    def __init__(self, joint_dims=None, n_components=3, **super_kwargs):
-        """
-        tSNE Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
-        to 3 which are interpreted as RGB.
+    """
+    tSNE Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
+    to 3 which are interpreted as RGB.
 
-        Parameters
-        ----------
-        super_kwargs
-        """
+    Parameters
+    ----------
+    super_kwargs
+    """
+    def __init__(self, joint_dims=None, n_components=3, **super_kwargs):
         joint_dims = ['D', 'H', 'W'] if joint_dims is None else joint_dims
         assert 'C' not in joint_dims
         super(TsneVisualizer, self).__init__(
@@ -352,22 +367,22 @@ class TsneVisualizer(BaseVisualizer):
 
 
 class UmapVisualizer(BaseVisualizer):
+    """
+    UMAP Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
+    to 3 which are interpreted as RGB.
+
+    Parameters
+    ----------
+    see https://umap-learn.readthedocs.io/en/latest/parameters.html
+    n_neighbors: controls how many neighbors are considered for distance
+                    estimation on the manifold. Low number focuses on local
+                    distance, large numbers more on global structure, default 15
+    min_dist: minimum distance of points after dimension reduction, default 0.1
+
+    super_kwargs
+
+    """
     def __init__(self, joint_dims=None, n_components=3, n_neighbors=15, min_dist=0.1, **super_kwargs):
-        """
-        UMAP Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
-        to 3 which are interpreted as RGB.
-
-        Parameters
-        ----------
-        see https://umap-learn.readthedocs.io/en/latest/parameters.html
-        n_neighbors: controls how many neighbors are considered for distance
-                        estimation on the manifold. Low number focuses on local
-                        distance, large numbers more on global structure, default 15
-        min_dist: minimum distance of points after dimension reduction, default 0.1
-
-        super_kwargs
-
-        """
         assert umap_available, "You tried to use the UmapVisualizer without having UMAP installed."
         joint_dims = ['D', 'H', 'W'] if joint_dims is None else joint_dims
         assert 'C' not in joint_dims
@@ -398,18 +413,18 @@ class UmapVisualizer(BaseVisualizer):
 
 
 class NormVisualizer(BaseVisualizer):
-    def __init__(self, order=2, dim='C', **super_kwargs):
-        """
-        Visualize the norm of a tensor, along a given direction (by default over the channels).
+    """
+    Visualize the norm of a tensor, along a given direction (by default over the channels).
 
-        Parameters
-        ----------
-        order : int
-            Order of the norm (Default is 2, euclidean norm).
-        dim : str
-            Name of the dimension in which the norm is computed.
-        super_kwargs
-        """
+    Parameters
+    ----------
+    order : int
+        Order of the norm (Default is 2, euclidean norm).
+    dim : str
+        Name of the dimension in which the norm is computed.
+    super_kwargs
+    """
+    def __init__(self, order=2, dim='C', **super_kwargs):
         super(NormVisualizer, self).__init__(
             in_specs={'tensor': ['B'] + [dim]},
             out_spec='B',
@@ -422,16 +437,16 @@ class NormVisualizer(BaseVisualizer):
 
 
 class DiagonalSplitVisualizer(BaseVisualizer):
-    def __init__(self, offset=0, **super_kwargs):
-        """
-        Combine two input images, displaying one above and one below the diagonal.
+    """
+    Combine two input images, displaying one above and one below the diagonal.
 
-        Parameters
-        ----------
-        offset : int
-            The diagonal along which the image will be split is shifted by offset.
-        super_kwargs
-        """
+    Parameters
+    ----------
+    offset : int
+        The diagonal along which the image will be split is shifted by offset.
+    super_kwargs
+    """
+    def __init__(self, offset=0, **super_kwargs):
         super(DiagonalSplitVisualizer, self).__init__(
             in_specs={'upper_right_image': ['B', 'H', 'W'],
                       'lower_left_image': ['B', 'H', 'W']},
@@ -497,21 +512,21 @@ def _upsample_axis(tensor, axis, factor):
 
 
 class UpsamplingVisualizer(BaseVisualizer):
-    def __init__(self, specs, shape=None, factors=None, **super_kwargs):
-        """
-        Upsample a tensor along a list of axis (specified via specs) to a specified shape, by a list of specified
-        factors or the shape of a reference tensor (given as an optional argument to visualize).
+    """
+    Upsample a tensor along a list of axis (specified via specs) to a specified shape, by a list of specified
+    factors or the shape of a reference tensor (given as an optional argument to visualize).
 
-        Parameters
-        ----------
-        specs : list of str
-            Specs of the axes to upsample along.
-        shape : None or int or list of int
-            Shape after upsampling.
-        factors: None or int or list of int
-            Factors to upsample by.
-        super_kwargs
-        """
+    Parameters
+    ----------
+    specs : list of str
+        Specs of the axes to upsample along.
+    shape : None or int or list of int
+        Shape after upsampling.
+    factors: None or int or list of int
+        Factors to upsample by.
+    super_kwargs
+    """
+    def __init__(self, specs, shape=None, factors=None, **super_kwargs):
         self.specs = list(specs)
         self.out_shape = [shape] * len(specs) if isinstance(shape, int) else shape
         self.factors = [factors] * len(specs) if isinstance(factors, int) else shape

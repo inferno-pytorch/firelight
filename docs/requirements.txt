@@ -2,3 +2,5 @@ sphinx==2.2.0
 sphinx-rtd-theme==0.4.3
 sphinx-gallery==0.4.0
 sphinx-paramlinks==0.3.7
+autodocsumm==0.1.11 
+sphinx-automodapi==0.12

@@ -18,13 +18,24 @@ logger = logging.getLogger(__name__)
 def get_single_key_value_pair(d):
     """
     Get the key and value of a length one dictionary.
+
     Parameters
     ----------
     d : dict
+        Single element dictionary to split into key and value.
 
     Returns
     -------
-        list containing key and value
+    tuple
+        of length 2, containing the key and value
+
+    Examples
+    --------
+
+    >>> d = dict(key='value')
+    >>> get_single_key_value_pair(d)
+    ('key', 'value')
+
     """
     assert isinstance(d, dict), f'{d}'
     assert len(d) == 1, f'{d}'
@@ -37,12 +48,17 @@ def list_of_dicts_to_dict(list_of_dicts):
 
     Parameters
     ----------
-    list_of_dicts : list of dict
-        List of one element dictionaries that are to be merged.
+    list_of_dicts : :obj:`list` of :obj:`dict`
+        List of one element dictionaries to merge.
 
     Returns
     -------
         dict
+
+    Examples
+    --------
+    >>> list_of_dicts_to_dict([{'a': 1}, {'b': 2}])
+    {'a': 1, 'b': 2}
     """
 
     result = dict()
@@ -64,6 +80,25 @@ def parse_slice(slice_string):
     Returns
     -------
         slice
+
+    Examples
+    --------
+
+    Everything supported in fancy indexing works here, too:
+
+    >>> parse_slice('5')
+    slice(5, 6, None)
+    >>> parse_slice(':5')
+    slice(None, 5, None)
+    >>> parse_slice('5:')
+    slice(5, None, None)
+    >>> parse_slice('2:5')
+    slice(2, 5, None)
+    >>> parse_slice('2:5:3')
+    slice(2, 5, 3)
+    >>> parse_slice('::3')
+    slice(None, None, 3)
+
     """
     # Remove whitespace
     slice_string.replace(' ', '')
@@ -92,22 +127,39 @@ def parse_named_slicing(slicing, spec):
     ----------
     slicing : str or list or dict
         Specifies the slicing that is to be applied. Depending on the type:
-            - str:  slice strings joined by ','. In this case, spec will be ignored. (e.g. '0, 1:4')
-            - list: has to be list of one element dictionaries, that will be converted to one dict
-                    with list_of_dicts_to_dict
-            - dict: keys are dimension names, values corresponding slices (as strings) (e.g. {'B': '0', 'C': '1:4'})
-    spec : List
-        List of names of dimensions of the tensor that is to be sliced
+
+        - :obj:`str`:  slice strings joined by ','. In this case, spec will be ignored. (e.g. :code:`'0, 1:4'`)
+        - :obj:`list`: has to be list of one element dictionaries, that will be converted to one dict
+          with :func:`list_of_dicts_to_dict`
+        - :obj:`dict`: keys are dimension names, values corresponding slices (as strings)
+          (e.g. :code:`{'B': '0', 'C': '1:4'}`)
+
+    spec : list
+        List of names of dimensions of the tensor that is to be sliced.
 
     Returns
     -------
+    list
         List of slice objects
+
+    Examples
+    --------
+
+        Three ways to encode the same slicing:
+
+        >>> parse_named_slicing(':5, :, 1', ['A', 'B', 'C'])
+        [slice(None, 5, None), slice(None, None, None), slice(1, 2, None)]
+        >>> parse_named_slicing({'A': ':5', 'C': '1'}, ['A', 'B', 'C'])
+        [slice(None, 5, None), slice(None, None, None), slice(1, 2, None)]
+        >>> parse_named_slicing([{'A': ':5'}, {'C': '1'}], ['A', 'B', 'C'])
+        [slice(None, 5, None), slice(None, None, None), slice(1, 2, None)]
+
     """
     if slicing is None:
         return slicing
     elif isinstance(slicing, str):  # No dimension names given, assume this is the whole slicing as one string
         # Remove whitespace
-        slicing.replace(' ', '')
+        slicing = slicing.replace(' ', '')
         # Parse slices
         slices = [parse_slice(s) for s in slicing.split(',')]
         assert len(slices) <= len(spec)
@@ -131,25 +183,30 @@ def parse_named_slicing(slicing, spec):
 def parse_pre_func(pre_info):
     """
     Parse the pre-processing function for an input to a visualizer
-    (as given by the 'pre' key in the input_mapping)
+    (as given by the 'pre' key in the input_mapping).
 
     Parameters
     ----------
     pre_info: list, dict or str
         Depending on the type:
-            - str:  Name of function in torch, torch.nn.functional, or dotted path to function.
-            - list: List of functions to be applied in succession. Each will be parsed by this function.
-            - dict: Has to have length one. The key is the name of a function (see 'str' above), the value specifies
-                    additional arguments supplied to that function (apart from the tensor that will be transformed).
-                    Either positional arguments can be specified as a list, or keyword arguments as a dictionary.
+
+        - :obj:`str`:  Name of function in torch, torch.nn.functional, or dotted path to function.
+        - :obj:`list`: List of functions to be applied in succession. Each will be parsed by this function.
+        - :obj:`dict`: Has to have length one. The key is the name of a function (see :obj:`str` above),
+          the value specifies additional arguments supplied to that function (apart from the tensor that will be
+          transformed). Either positional arguments can be specified as a list, or keyword arguments as a dictionary.
+
         Examples:
-            - pre_info = 'sigmoid'
-            - pre_info = {'softmax': [1]}}
-            - pre_info = {'softmax': {dim: 0}}}
+
+        - :code:`pre_info = 'sigmoid'`
+        - :code:`pre_info = {'softmax': [1]}}`
+        - :code:`pre_info = {'softmax': {dim: 0}}}`
 
     Returns
     -------
-        callable
+    Callable
+        The parsed pre-processing function.
+
     """
     if isinstance(pre_info, list):
         # parse as concatenation
@@ -197,6 +254,14 @@ DEFAULT_SPECS = {
     5: list('BCDHW'),   # 5D: Batch, Channel, Depth, Height, Width
     6: list('BCTDHW')   # 6D: Batch, Channel, Time, Depth, Height, Width
 }
+"""dict: The default ways to label the dimensions depending on dimensionality.
+
+- 3 Axes : :math:`(B, H, W)`
+- 4 Axes : :math:`(B, C, H, W)`
+- 5 Axes : :math:`(B, C, D, H, W)`
+- 6 Axes : :math:`(B, C, T, D, H, W)`
+
+"""
 
 
 def apply_slice_mapping(mapping, states, include_old_states=True):
@@ -204,10 +269,13 @@ def apply_slice_mapping(mapping, states, include_old_states=True):
     Add/Replace tensors in the dictionary 'states' as specified with the dictionary 'mapping'. Each key in mapping
     corresponds to a state in the resulting dictionary, and each value describes:
 
-    - from which tensors in 'states' this state is grabbed (e.g. 'prediction')
-    - if a list of tensors is grabbed: which list index should be used (e.g 'index': 0)
-    - what slice of the grabbed tensor should be used (e.g 'B': '0', 'C': '0:3')
-    - what function in torch.nn.functional should be applied to the tensor after the slicing (e.g. 'pre': 'sigmoid')
+    - from which tensors in `states` this state is grabbed (e.g. :code:`['prediction']`)
+    - if a list of tensors is grabbed: which list index should be used (e.g :code:`'[index': 0]`)
+    - what slice of the grabbed tensor should be used (e.g :code:`['B': '0', 'C': '0:3']`).
+      For details see :func:`parse_named_slicing`.
+    - what function in torch.nn.functional should be applied to the tensor after the slicing
+      (e.g. :code:`['pre': 'sigmoid']`).
+      See :func:`parse_pre_func` for details.
 
     These arguments can be specified in one dictionary or a list of length one dictionaries.
 
@@ -219,9 +287,11 @@ def apply_slice_mapping(mapping, states, include_old_states=True):
         Dictionary of states to be mapped. Values must be either tensors, or tuples of the form (tensor, spec).
     include_old_states: bool
         Whether or not to include states in the ouput dictionary, on which no operations were performed.
-    Returns dict
-        Dictionary of mapped states
+
+    Returns
     -------
+    dict
+        Dictionary of mapped states
 
     """
     mapping = copy(mapping)
@@ -323,63 +393,66 @@ def apply_slice_mapping(mapping, states, include_old_states=True):
 
 
 class BaseVisualizer(SpecFunction):
+    """
+    Base class for all visualizers.
+    If you want to use outputs of other visualizers, derive from ContainerVisualizer instead.
+
+    Parameters
+    ----------
+    input: list or None
+        If the visualizer has one input only, this can be used to specify which state to pass (in the format of a
+        value in input_mapping).
+    input_mapping : dict or list
+        Dictionary specifying slicing and renaming of states for visualization (see :func:`apply_slice_mapping`).
+    colorize : bool
+        If False, the addition/rescaling of a 'Color' dimension to RGBA in [0,1] is suppressed.
+    cmap : str or callable
+        If string, specifies the name of the matplotlib `colormap
+        <https://matplotlib.org/examples/color/colormaps_reference.html>`_
+        to be used for colorization.
+
+        If callable, must be a mapping from a [Batch x Pixels] to [Batch x Pixels x Color] :class:`numpy.ndarray` used
+        for colorization.
+    background_label : int or float
+        If specified, pixels with this value (after :meth:`visualize`) will be colored with :paramref:`background_color`.
+    background_color : float or list
+        Specifies the color for the background_label. Will be interpreted as grey-value if float, and RGB or RGBA if
+        list of length 3 or 4 respectively.
+    opacity : float
+        Opacity of visualization, see colorization.py.
+    colorize_jointly : list of str
+        A list containing names of dimensions. Sets of data points separated only in these dimensions will be scaled
+        equally at colorization (such that they lie in [0, 1]). Not used if 'value_range' is specified.
+
+        Default: :code:`['W', 'H', 'D']` (standing for Width, Height, Depth)
+
+        Examples:
+
+        - :code:`color_jointly = ['W', 'H']` :      Scale each image separately
+        - :code:`color_jointly = ['B', 'W', 'H']` : Scale images corresponding to different samples in the batch
+          equally, such that their intensities are comparable
+
+    value_range : List
+        If specified, the automatic scaling for colorization is overridden. Has to have 2 elements.
+        The interval [value_range[0], value_range[1]] will be mapped to [0, 1] by a linear transformation.
+
+        Examples:
+
+        - If your network has the sigmoid function as a final layer, the data does not need to be scaled
+          further. Hence :code:`value_range = [0, 1]` should be specified.
+        - If your network produces outputs normalized between -1 and 1, you could set :code:`value_range = [-1, 1]`.
+
+    verbose : bool
+        If true, information about the state dict will be printed during visualization.
+    **super_kwargs:
+        Arguments passed to the constructor of SpecFunction, above all the dimension names of inputs and output of
+        visualize()
+    """
     def __init__(self, input=None, input_mapping=None, colorize=True,
                  cmap=None, background_label=None, background_color=None, opacity=1.0, colorize_jointly=None,
                  value_range=None, verbose=False, scaling_options=None,
                  **super_kwargs):
-        """
-        Base class for all visualizers.
-        If you want to use outputs of other visualizers, derive from ContainerVisualizer instead.
 
-        Parameters
-        ----------
-        input: list or None
-            If the visualizer has one input only, this can be used to specify which state to pass (in the format of a
-            value in input_mapping).
-        input_mapping : dict or list
-            Dictionary specifying slicing and renaming of states for visualization (see apply_slice_mapping above).
-        colorize : bool
-            If False, the addition/rescaling of a 'Color' dimension to RGBA in [0,1] is suppressed.
-        cmap : str or callable
-            If string, specifies the name of the matplotlib colormap to be used for colorization
-            (see https://matplotlib.org/examples/color/colormaps_reference.html)
-            If callable, must be a mapping from a [Batch x Pixels] to [Batch x Pixels x Color] numpy array used for
-            colorization.
-        background_label : int or float
-            If specified, pixels with this value (after visualize()) will be colored with background_color
-        background_color : float or list
-            Specifies the color for the background label. Will be interpreted as grey-value if float, and RGB or RGBA if
-            list of length 3 or 4 respectively.
-        opacity : float
-            Opacity of visualization, see colorization.py.
-        colorize_jointly : List of str
-            A list containing names of dimensions. Sets of data points separated only in these dimensions will be scaled
-            equally at colorization (such that they lie in [0, 1]). Not used if 'value_range' is specified.
-
-            Default: :code:`['W', 'H', 'D']` (standing for Width, Height, Depth)
-
-            Examples:
-
-            - :code:`color_jointly = ['W', 'H']` :      Scale each image separately
-            - :code:`color_jointly = ['B', 'W', 'H']` : Scale images corresponding to different samples in the batch
-              equally, such that their intensities are comparable
-
-        value_range : List
-            If specified, the automatic scaling for colorization is overridden. Has to have 2 elements.
-            The interval [value_range[0], value_range[1]] will be mapped to [0, 1] by a linear transformation.
-
-            Examples:
-
-            - If your network has the sigmoid function as a final layer, the data does not need to be scaled
-              further. Hence :code:`value_range = [0, 1]` should be specified.
-            - If your network produces normalized outputs, you could set :code:`value_range = [-1, 1]`.
-
-        verbose : bool
-            If true, information about the state dict will be printed during visualization.
-        super_kwargs:
-            Arguments passed to the constructor of SpecFunction, above all the dimension names of inputs and output of
-            visualize()
-        """
         in_specs = super_kwargs.get('in_specs')
         super(BaseVisualizer, self).__init__(**super_kwargs)
 
@@ -411,11 +484,11 @@ class BaseVisualizer(SpecFunction):
         """
         Visualizes the data specified in the state dictionary, following these steps:
 
-        - Apply the input mapping,
+        - Apply the input mapping (using :func:`apply_input_mapping`),
         - Reshape the states needed for visualization as specified by in_specs at initialization. Extra dimensions
           are 'put into' the batch dimension, missing dimensions are added (This is handled in the base class,
-          SpecFunction)
-        - Apply self.visualize,
+          :class:`firelight.utils.dim_utils.SpecFunction`)
+        - Apply :meth:`visualize`,
         - Reshape the result, with manipulations applied on the input in reverse,
         - If not disabled by setting :code:`colorize=False`, colorize the result,
           leading to RGBA output with values in :math:`[0, 1]`.
@@ -509,35 +582,36 @@ class BaseVisualizer(SpecFunction):
 
 
 class ContainerVisualizer(BaseVisualizer):
+    """
+    Base Class for visualizers combining the outputs of other visualizers.
+
+    Parameters
+    ----------
+    visualizers : List of BaseVisualizer
+        Child visualizers whose outputs are to be combined.
+    in_spec : List of str
+        List of dimension names. The outputs of all the child visualizers will be brought in this shape to be
+        combined (in combine()).
+    out_spec : List of str
+        List of dimension names of the output of combine().
+    extra_in_specs : dict
+        Dictionary containing lists of dimension names for inputs of combine that are directly taken from the state
+        dictionary and are not the output of a child visualizer.
+    input_mapping : dict
+        Dictionary specifying slicing and renaming of states for visualization (see :func:`apply_slice_mapping`).
+    equalize_visualization_shapes : bool
+        If true (as per default), the shapes of the outputs of child visualizers will be equalized by repeating
+        along dimensions with shape mismatches. Only works if the maximum size of each dimension is divisible by the
+        sizes of all the child visualizations in that dimension.
+    colorize : bool
+        If False, the addition/rescaling of a 'Color' dimension to RGBA in [0,1] is suppressed.
+    **super_kwargs :
+        Dictionary specifying other arguments of BaseVisualizer.
+
+    """
     def __init__(self, visualizers, in_spec, out_spec, extra_in_specs=None, input_mapping=None,
                  equalize_visualization_shapes=True,
                  colorize=False, **super_kwargs):
-        """
-        Base Class for visualizers combining the outputs of other visualizers.
-
-        Parameters
-        ----------
-        visualizers : List of BaseVisualizer
-            Child visualizers whose outputs are to be combined.
-        in_spec : List of str
-            List of dimension names. The outputs of all the child visualizers will be brought in this shape to be
-            combined (in combine()).
-        out_spec : List of str
-            List of dimension names of the output of combine().
-        extra_in_specs : dict
-            Dictionary containing lists of dimension names for inputs of combine that are directly taken from the state
-            dictionary and are not the output of a child visualizer.
-        input_mapping : dict
-            Dictionary specifying slicing and renaming of states for visualization (see apply_slice_mapping above).
-        equalize_visualization_shapes : bool
-            If true (as per default), the shapes of the outputs of child visualizers will be equalized by repeating
-            along dimensions with shape mismatches. Only works if the maximum size of each dimension is divisible by the
-            sizes of all the child visualizations in that dimension.
-        colorize : bool
-            If False, the addition/rescaling of a 'Color' dimension to RGBA in [0,1] is suppressed.
-        super_kwargs :
-            Dictionary specifying other arguments of BaseVisualizer.
-        """
         self.in_spec = in_spec
         self.visualizers = visualizers
         self.n_visualizers = len(visualizers)
@@ -571,7 +645,7 @@ class ContainerVisualizer(BaseVisualizer):
 
         Returns
         -------
-            torch.Tensor or (torch.Tensor, list), depending on the value of return_spec
+            torch.Tensor or (torch.Tensor, list), depending on the value of :obj:`return_spec`.
 
         """
         states = copy(states)
@@ -601,16 +675,17 @@ class ContainerVisualizer(BaseVisualizer):
 
         Parameters
         ----------
-        visualizations : List of torch.Tensor
+        visualizations : :obj:`list` of :obj:`torch.Tensor`
             List containing the visualizations from the child visualizers. Their dimensionality and order of dimensions
             will be as specified in in_spec at initialization.
         extra_states : dict
             Dictionary containing extra states (not outputs of child visualizers) used for visualization. The states in
-            extra_in_specs (specified at initialization) will have dimensionality and order of dimensions as specified
-            there.
+            :obj:`extra_in_specs` (specified at initialization) will have dimensionality and order of dimensions as
+            specified there.
 
         Returns
         -------
             torch.Tensor
+            
         """
         raise NotImplementedError
