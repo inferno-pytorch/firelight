@@ -19,12 +19,11 @@ def join_specs(*specs):
 
     Returns
     -------
-        list
+    list
 
     Examples
     --------
 
-    >>> from firelight.utils.dim_utils import join_specs
     >>> join_specs(['B', 'C'], ['B', 'H', 'W'])
     ['B', 'C', 'H', 'W']
     >>> join_specs(['B', 'C'], ['H', 'B', 'W'])
@@ -43,7 +42,7 @@ def join_specs(*specs):
 
 def extend_dim(tensor, in_spec, out_spec, return_spec=False):
     """
-    Adds extra (trivial, length 1) dimensions to tensor such that it has all the dimensions present in out_spec.
+    Adds extra (length 1) dimensions to the input tensor such that it has all the dimensions present in out_spec.
 
     Parameters
     ----------
@@ -52,13 +51,26 @@ def extend_dim(tensor, in_spec, out_spec, return_spec=False):
         spec of the input tensor
     out_spec : list
         spec of the output tensor
-    return_spec : bool
+    return_spec : bool, optional
         Weather the output should consist of a tuple containing the output tensor and the resulting spec, or only the
         former.
 
     Returns
     -------
-        torch.Tensor or tuple
+    torch.Tensor or tuple
+
+    Examples
+    --------
+
+    >>> tensor, out_spec = extend_dim(
+    ...     torch.empty(2, 3),
+    ...     ['A', 'B'], ['A', 'B', 'C', 'D'],
+    ...     return_spec=True
+    ... )
+    >>> print(tensor.shape)
+    torch.Size([2, 3, 1, 1])
+    >>> print(out_spec)
+    ['A', 'B', 'C', 'D']
 
     """
     assert all(d in out_spec for d in in_spec)
@@ -74,7 +86,7 @@ def extend_dim(tensor, in_spec, out_spec, return_spec=False):
         return tensor
 
 
-def _moving_permutation(length, origin, goal):
+def moving_permutation(length, origin, goal):
     """
     Returns a permutation moving the element at position origin to the position goal (in the format requested by
     torch.Tensor.permute)
@@ -90,7 +102,16 @@ def _moving_permutation(length, origin, goal):
 
     Returns
     -------
-        list of int
+    list of int
+
+    Examples
+    --------
+
+    >>> moving_permutation(length=5, origin=1, goal=3)
+    [0, 2, 3, 1, 4]
+    >>> moving_permutation(length=5, origin=3, goal=1)
+    [0, 3, 1, 2, 4]
+
     """
     result = []
     for i in range(length):
@@ -110,26 +131,35 @@ def _moving_permutation(length, origin, goal):
 def collapse_dim(tensor, to_collapse, collapse_into=None, spec=None, return_spec=False):
     """
     Reshapes the input tensor, collapsing one dimension into another. This is achieved by
-        -   first permuting the tensors dimensions such that the dimension to collapse is next to the one to collapse it
-            into,
-        -   reshaping the tensor, making one dimension out of the to affected.
+
+    - first permuting the tensors dimensions such that the dimension to collapse is next to the one to collapse it into,
+    - reshaping the tensor, making one dimension out of the to affected.
 
     Parameters
     ----------
     tensor : torch.Tensor
     to_collapse : int or str
         Dimension to be collapsed.
-    collapse_into : int or str
+    collapse_into : int or str, optional
         Dimension into which the other will be collapsed.
-    spec : list
+    spec : list, optional
         Name of dimensions of input tensor. If not specified, will be taken to be range(len(tensor.shape())).
-    return_spec : bool
+    return_spec : bool, optional
         Weather the output should consist of a tuple containing the output tensor and the resulting spec, or only the
         former.
 
     Returns
     -------
-        torch.Tensor or tuple
+    torch.Tensor or tuple
+
+    Examples
+    --------
+
+    >>> tensor = torch.Tensor([[1, 2, 3], [10, 20, 30]]).long()
+    >>> collapse_dim(tensor, to_collapse=1, collapse_into=0)
+    tensor([ 1,  2,  3, 10, 20, 30])
+    >>> collapse_dim(tensor, to_collapse=0, collapse_into=1)
+    tensor([ 1, 10,  2, 20,  3, 30])
 
     """
     spec = list(range(len(tensor.shape))) if spec is None else spec
@@ -144,7 +174,7 @@ def collapse_dim(tensor, to_collapse, collapse_into=None, spec=None, return_spec
         i_to = spec.index(collapse_into)
         if i_to != i_from:
             i_to = i_to + 1 if i_from > i_to else i_to
-            tensor = tensor.permute(_moving_permutation(len(spec), i_from, i_to))
+            tensor = tensor.permute(moving_permutation(len(spec), i_from, i_to))
             new_shape = tensor.shape[:i_to-1] + (tensor.shape[i_to-1] * tensor.shape[i_to],) + tensor.shape[i_to+1:]
             tensor = tensor.contiguous().view(new_shape)
         else:
@@ -166,24 +196,40 @@ def convert_dim(tensor, in_spec, out_spec=None, collapsing_rules=None, uncollaps
     tensor : torch.Tensor
     in_spec : list
         Name of dimensions of the input tensor.
-    out_spec : list
+    out_spec : list, optional
         Name of dimensions that the output tensor will have.
-    collapsing_rules : list of tuple
+    collapsing_rules : list of tuple, optional
         List of two element tuples. The first dimension in a tuple will be collapsed into the second (dimensions given
         by name).
-    uncollapsing_rules : list of tuple
+    uncollapsing_rules : list of tuple, optional
         List of three element tuples. The first element of each specifies the dimension to 'uncollapse' (=split into
         two). The second element specifies the size of the added dimension, and the third its name.
-    return_spec : bool
+    return_spec : bool, optional
         Weather the output should consist of a tuple containing the output tensor and the resulting spec, or only the
         former.
-    return_inverse_kwargs : bool
+    return_inverse_kwargs : bool, optional
         If true, a dictionary containing arguments to reverse the conversion (with this function) are added to the
         output tuple.
 
     Returns
     -------
-        torch.Tensor or tuple
+    torch.Tensor or tuple
+
+    Examples
+    --------
+
+    >>> tensor = torch.Tensor([[1, 2, 3], [10, 20, 30]]).long()
+    >>> convert_dim(tensor, ['A', 'B'], ['B', 'A'])  # doctest: +NORMALIZE_WHITESPACE
+    tensor([[ 1, 10],
+            [ 2, 20],
+            [ 3, 30]])
+    >>> convert_dim(tensor, ['A', 'B'], collapsing_rules=[('A', 'B')])  # doctest: +NORMALIZE_WHITESPACE
+    tensor([ 1, 10,  2, 20,  3, 30])
+    >>> convert_dim(tensor, ['A', 'B'], collapsing_rules=[('B', 'A')])  # doctest: +NORMALIZE_WHITESPACE
+    tensor([ 1,  2,  3, 10, 20, 30])
+    >>> convert_dim(tensor.flatten(), ['A'], ['A', 'B'], uncollapsing_rules=[('A', 3, 'B')])  # doctest: +NORMALIZE_WHITESPACE
+    tensor([[ 1,  2,  3],
+            [10, 20, 30]])
 
     """
     assert len(tensor.shape) == len(in_spec), f'{tensor.shape}, {in_spec}'
@@ -269,7 +315,7 @@ def convert_dim(tensor, in_spec, out_spec=None, collapsing_rules=None, uncollaps
 
 def uncollapse_dim(tensor, to_uncollapse, uncollapsed_length, uncollapse_into=None, spec=None, return_spec=False):
     """
-    'Uncollapses' (=splits) a dimension in the input tensor, adding a dimension of specified length.
+    Splits a dimension in the input tensor into two, adding a dimension of specified length.
 
     Parameters
     ----------
@@ -278,17 +324,25 @@ def uncollapse_dim(tensor, to_uncollapse, uncollapsed_length, uncollapse_into=No
         Dimension to be split.
     uncollapsed_length : int
         Length of the new dimension.
-    uncollapse_into : str or int
+    uncollapse_into : str or int, optional
         Name of the new dimension.
-    spec : list
+    spec : list, optional
         Names or the dimensions of the input tensor
-    return_spec : bool
+    return_spec : bool, optional
         Weather the output should consist of a tuple containing the output tensor and the resulting spec, or only the
         former.
 
     Returns
     -------
-        torch.Tensor or tuple
+    torch.Tensor or tuple
+
+    Examples
+    --------
+
+    >>> tensor = torch.Tensor([1, 2, 3, 10, 20, 30]).long()
+    >>> uncollapse_dim(tensor, 0, 3, 1)  # doctest: +NORMALIZE_WHITESPACE
+    tensor([[ 1,  2,  3],
+            [10, 20, 30]])
     """
     # puts the new dimension directly behind the old one
     spec = list(range(len(tensor.shape))) if spec is None else spec
@@ -319,17 +373,18 @@ def add_dim(tensor, length=1, new_dim=None, spec=None, return_spec=False):
     tensor : torch.Tensor
     length : int
         Length of the new dimension.
-    new_dim : str
+    new_dim : str, optional
         Name of the new dimension
-    spec : list
+    spec : list, optional
         Names of dimensions of the input tensor
-    return_spec : bool
+    return_spec : bool, optional
         If true, a dictionary containing arguments to reverse the conversion (with this function) are added to the
         output tuple.
 
     Returns
     -------
-        torch.Tensor or tuple
+    torch.Tensor or tuple
+
     """
     tensor = tensor[None].repeat([length] + [1] * len(tensor.shape))
     if return_spec:
@@ -349,7 +404,8 @@ def equalize_specs(tensor_spec_pairs):
 
     Returns
     -------
-        torch.Tensor
+    torch.Tensor
+
     """
     specs = [p[1] for p in tensor_spec_pairs]
     unified_spec = list(np.unique(np.concatenate(specs)))
@@ -363,6 +419,12 @@ def equalize_shapes(tensor_spec_pairs):
     """
     Manipulates a list of tensors such that their shapes end up equal.
 
+    Axes that are not present in all tensors will be added as a trivial dimension to all tensors that do not have them.
+
+    If shapes do not match along a certain axis, the tensors with the smaller shape will be repeated along that axis.
+    Hence, the maximum length along each axis present in the list of tensors must be divisible by the lengths of all
+    other input tensors along that axis.
+
     Parameters
     ----------
     tensor_spec_pairs : list of tuple
@@ -370,7 +432,8 @@ def equalize_shapes(tensor_spec_pairs):
 
     Returns
     -------
-        torch.Tensor
+    torch.Tensor
+
     """
     tensor_spec_pairs = equalize_specs(tensor_spec_pairs)
     unified_shape = np.max(np.array([list(p[0].shape) for p in tensor_spec_pairs]), axis=0)
@@ -404,26 +467,26 @@ class SpecFunction:
 
     Parameters
     ----------
-    in_specs : dict
-        Dictionary specifying how the dimensionality and order of dimensions of input arguments of internal()
+    in_specs : dict, optional
+        Dictionary specifying how the dimensionality and order of dimensions of input arguments of :meth:`internal`
         should be adjusted.
 
-        - Keys: Names of input arguments (as in signature of internal())
+        - Keys: Names of input arguments (as in signature of :meth:`internal`)
 
         - Values: List of dimension names. The tensor supplied to internal under the name of the corresponding key
           will have this order of dimensions.
 
-    out_spec : list
-        List of dimension names of the output of internal()
-
-    collapse_into : list
+    out_spec : list, optional
+        List of dimension names of the output of :meth:`internal`
+    collapse_into : list, optional
         If given, the default behaviour of collapsing any extra given dimensions of states into the batch dimension
         'B' is overridden. Each entry of collapse_into must be a two element tuple, with the first element being the
         dimension to collapse, the second one being the dimension to collapse it into (prior to passing the tensor
-        to internal() ).
-    suppress_spec_adjustment : bool
+        to :meth:`internal` ).
+    suppress_spec_adjustment : bool, optional
         Argument to completely suppress the adjustment of dimensionalities in call(), for example if it is taken
         care of in call() of derived class (see firelight.visualizers.base.ConatainerVisualizer)
+
     """
     def __init__(self, in_specs=None, out_spec=None, collapse_into=None, suppress_spec_adjustment=True):
         if in_specs is None or out_spec is None:
@@ -447,6 +510,28 @@ class SpecFunction:
         self.collapse_into = {'rest': 'B'} if collapse_into is None else collapse_into
 
     def __call__(self, *args, out_spec=None, return_spec=False, **kwargs):
+        """
+        Apply the wrapped function to a set of input arguments. Tensors will be reshaped as specified at initialization.
+
+        Parameters
+        ----------
+        args : list
+            List of positional input arguments to the wrapped function. They will be passed to :meth:`internal` without
+            any processing.
+        out_spec : list, optional
+            List of dimension names of the output.
+        return_spec : bool, optional
+            Weather the output should consist of a tuple containing the output tensor and the resulting spec, or only the
+            former.
+        **kwargs
+            Keyword arguments that will be passed to :meth:`internal`.
+            The ones with names present in :paramref:`SpecFunction.in_specs` will be reshaped as required.
+
+        Returns
+        -------
+        torch.Tensor or tuple
+
+        """
         if self.suppress_spec_adjustment:  # just do internal if requested
             return self.internal(*args, out_spec=out_spec, return_spec=return_spec, **kwargs)
 
@@ -538,140 +623,7 @@ class SpecFunction:
             return result
 
     def internal(self, *args, **kwargs):
+        """
+        Function that is being wrapped.
+        """
         pass
-
-
-if __name__ == '__main__':
-    # test for equalize_shapes
-    # t0 = torch.Tensor(np.random.randn(2, 3, 4, 5))
-    # spec0 = list('ABCD')
-    # t1 = torch.Tensor(np.random.randn(7, 11, 6))
-    # spec1 = list('EFB')
-    # print(equalize_shapes(tensor_spec_pairs=[(t0, spec0), (t1, spec1)]))
-    # assert False
-
-
-    # test for invertible dimension conversion
-    def test_inveribility():
-        spec_names = list('abcdefghijklmnopqrstuvwxyz')
-        in_spec_length = np.random.randint(1, 8)
-        in_spec = spec_names[:in_spec_length].copy()
-        out_spec = spec_names[np.random.randint(0, in_spec_length):np.random.randint(in_spec_length, in_spec_length+4)]
-
-        collapsing_rules = []
-        for d in in_spec:
-            if d not in out_spec:
-                collapsing_rules.append((d, np.random.choice(out_spec)))
-
-        np.random.shuffle(in_spec)
-        np.random.shuffle(out_spec)
-        in_spec = list(in_spec)
-        out_spec = list(out_spec)
-        print('in_spec', in_spec)
-        print('out_spec', out_spec)
-        print('collapsing rules', collapsing_rules)
-        in_shape = np.random.randint(1, 5, in_spec_length)
-        print('in_shape', in_shape)
-        t_in = torch.Tensor(np.random.randn(*in_shape))
-
-        t_converted, new_spec, inverse_kwargs = convert_dim(t_in, in_spec=in_spec, out_spec=None,
-                                                            collapsing_rules=collapsing_rules,
-                                                            return_inverse_kwargs=True, return_spec=True)
-        print('new_spec', new_spec)
-        print('inverse kwargs', inverse_kwargs)
-        del inverse_kwargs['out_spec']
-
-        t_out, spec = convert_dim(t_converted, return_spec=True, **inverse_kwargs)
-        print('asdf spec', spec)
-        t_out = convert_dim(t_out, in_spec=spec, out_spec=in_spec)
-        assert t_in.shape == t_out.shape, f'{t_in.shape}, {t_out.shape}'
-        assert (t_out == t_in).float().mean() == 1
-        print('test passed')
-        print()
-
-    for _ in range(100):
-        test_inveribility()
-    assert False
-    t = torch.Tensor(np.random.randn(2, 3, 4, 5))
-    spec = list('ABCD')
-    out_spec = list('DA')  # list('EDA')
-    collapsing_rules = ['BD', 'CA']
-    before = t.clone()
-
-    t, new_spec, inverse_kwargs = convert_dim(t, in_spec=spec, out_spec=out_spec,
-                                    collapsing_rules=collapsing_rules,
-                                    return_inverse_kwargs=True, return_spec=True)
-    print('inverse kwargs:', inverse_kwargs)
-    t = convert_dim(t, **inverse_kwargs)
-    print(t.shape)
-    print(before.shape)
-    print((t == before).float().mean())
-
-
-    # t = torch.Tensor([[[0, 1], [0, 2]], [[5, 10], [5, 20]]])
-    # t = torch.Tensor([[1, 2, 3], [2, 3, 4]])
-    # print(t)
-    # print(t.shape)
-    # t = convert_dim(t, in_spec=[0, 1], out_spec=[0,], collapsing_rules=[(1, 0)])
-    # print(t)
-    # print(t.shape)
-    #
-    # assert False
-
-    class MaskArrays(SpecFunction):
-        def __init__(self, **super_kwargs):
-            super(MaskArrays, self).__init__(in_specs={'mask': 'BW', 'array': 'BWC'}, out_spec='BWC', **super_kwargs)
-
-        def internal(self, mask, array, value=0.0):
-            result = array.clone()
-            result[mask == 0] = value
-            return result
-
-    class MultiScale(SpecFunction):
-        def __init__(self, **super_kwargs):
-            super(MultiScale, self).__init__(in_specs={'data': 'BX', 'scales': 'BS'}, out_spec='BXS', **super_kwargs)
-
-        def internal(self, data, scales):
-            return data[:, :, None] * scales[:, None, :]
-
-
-    def rand_tensor(*shape):
-        return torch.Tensor(np.random.randn(*shape))
-
-    inputs = {
-        'array': (rand_tensor(1, 3, 4, 5), 'XYFH'),
-        'mask': (rand_tensor(1, 5) > 0, list('XH')),
-        'value': 100.0,
-        'out_spec': 'XYHWCF',
-    }
-    maskArrays = MaskArrays()
-    result = maskArrays(**inputs)
-    print(result[0, 0, :, 0, :, :])
-    print(result.shape)
-
-    inputs = {
-        'data': (rand_tensor(2, 3), 'XY'),
-        'scales': (torch.Tensor([0, 1, 100]).float(), 'S')
-    }
-    multiScale = MultiScale()
-    print(multiScale(**inputs))
-
-    #
-    # spec1 = list('CHW')
-    # spec2 = list('BWFDHC')
-    #
-    # t = rand_tensor(2, 6, 4)
-    #
-    # print(_moving_permutation(5, 0, 2))
-    # print(_moving_permutation(5, 2, 0))
-    # print(_moving_permutation(5, 1, 4))
-    # print(_moving_permutation(5, 4, 1))
-    #
-    # #print(collapse_dim(t, 'H', 'C', spec1))
-    # #print(collapse_dim(t, 'C', 'W', spec1))
-    # #print(collapse_dim(t, 'W', 'C', spec1))
-    #
-    # t, spec1 = uncollapse_dim(t, spec=spec1, to_uncollapse='H', uncollapsed_length=3, uncollapse_into='X', return_spec=True)
-    # print(t.shape)
-    #
-    # #print(convert_dim(t, spec1, spec2, collapsing_rules=['HW', 'WF', 'FB']).shape)
