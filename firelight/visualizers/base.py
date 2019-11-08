@@ -686,6 +686,6 @@ class ContainerVisualizer(BaseVisualizer):
         Returns
         -------
             torch.Tensor
-            
+
         """
         raise NotImplementedError

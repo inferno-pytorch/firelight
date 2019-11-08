@@ -59,6 +59,8 @@ intersphinx_mapping = {
         'numpy': ('http://docs.scipy.org/doc/numpy/', None),
         'python': ('https://docs.python.org/', None),
         'torch': ('https://pytorch.org/docs/master/', None),
+        'sklearn': ('http://scikit-learn.org/stable',
+                    (None, './_intersphinx/sklearn-objects.inv'))
 }
 
 # paths for sphinx gallery
