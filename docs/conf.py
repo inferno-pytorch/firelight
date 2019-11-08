@@ -38,6 +38,7 @@ extensions = [
         'sphinx.ext.doctest',
         'sphinx.ext.viewcode',
         'sphinx_gallery.gen_gallery',
+        'sphinx_paramlinks',
 ]
 napoleon_include_init_with_doc = True
 napoleon_include_special_with_doc = True
@@ -73,6 +74,12 @@ sphinx_gallery_conf = {
         # }
 }
 
+doctest_global_setup = """
+import torch
+from firelight.utils.dim_utils import *
+from firelight.config_parsing import *
+"""
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -83,7 +90,6 @@ exclude_patterns = []
 
 
 from unittest.mock import MagicMock
-
 
 class Mock(MagicMock):
     @classmethod
