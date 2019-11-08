@@ -85,6 +85,3 @@ image_grid = visualizer(**states)
 # Log your image however you want.
 plt.figure(figsize=(10, 6))
 plt.imshow(image_grid.numpy())
-plt.show()
-
-
