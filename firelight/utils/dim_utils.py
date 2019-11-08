@@ -102,7 +102,7 @@ def moving_permutation(length, origin, goal):
 
     Returns
     -------
-    list of int
+    :obj:`list` of :obj:`int`
 
     Examples
     --------
@@ -198,10 +198,10 @@ def convert_dim(tensor, in_spec, out_spec=None, collapsing_rules=None, uncollaps
         Name of dimensions of the input tensor.
     out_spec : list, optional
         Name of dimensions that the output tensor will have.
-    collapsing_rules : list of tuple, optional
+    collapsing_rules : :obj:`list` of :obj:`tuple`, optional
         List of two element tuples. The first dimension in a tuple will be collapsed into the second (dimensions given
         by name).
-    uncollapsing_rules : list of tuple, optional
+    uncollapsing_rules : :obj:`list` of :obj:`tuple`, optional
         List of three element tuples. The first element of each specifies the dimension to 'uncollapse' (=split into
         two). The second element specifies the size of the added dimension, and the third its name.
     return_spec : bool, optional
@@ -399,7 +399,7 @@ def equalize_specs(tensor_spec_pairs):
 
     Parameters
     ----------
-    tensor_spec_pairs : list of tuple
+    tensor_spec_pairs : :obj:`list` of :obj:`tuple`
         List of two element tuples, each consisting of a tensor and a spec (=list of names of dimensions).
 
     Returns
@@ -427,7 +427,7 @@ def equalize_shapes(tensor_spec_pairs):
 
     Parameters
     ----------
-    tensor_spec_pairs : list of tuple
+    tensor_spec_pairs : :obj:`list` of :obj:`tuple`
         List of two element tuples, each consisting of a tensor and a spec (=list of names of dimensions).
 
     Returns
