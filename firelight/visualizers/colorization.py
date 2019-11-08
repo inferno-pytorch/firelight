@@ -18,7 +18,8 @@ def hsv_to_rgb(h, s, v):  # TODO: remove colorsys dependency
 
     Returns
     -------
-        np.ndarray
+    numpy.ndarray
+        The converted color in RGB space.
     """
     i = np.floor(h*6.0)
     f = h * 6 - i
@@ -46,6 +47,7 @@ def hsv_to_rgb(h, s, v):  # TODO: remove colorsys dependency
 def get_distinct_colors(n, min_sat=.5, min_val=.5):
     """
     Generates a list of distinct colors, evenly separated in HSV space.
+
     Parameters
     ----------
     n : int
@@ -53,11 +55,13 @@ def get_distinct_colors(n, min_sat=.5, min_val=.5):
     min_sat : float
         Minimum saturation.
     min_val : float
-        Minimum brightness
+        Minimum brightness.
 
     Returns
     -------
-        np.ndarray
+    numpy.ndarray
+        Array of shape (n, 3) containing the generated colors.
+
     """
     huePartition = 1.0 / (n + 1)
     hues = np.arange(0, n) * huePartition
@@ -72,16 +76,17 @@ def colorize_segmentation(seg, ignore_label=None, ignore_color=(0, 0, 0)):
 
     Parameters
     ----------
-    seg : np.ndarray
+    seg : numpy.ndarray
         Segmentation to be colorized. Can have any shape, but data type must be discrete.
     ignore_label : int
         Label of segment to be colored with ignore_color.
     ignore_color : tuple
-        RGB values of colors of segment labeled with ignore_label.
+        RGB color of segment labeled with ignore_label.
 
     Returns
     -------
-        np.ndarray
+    numpy.ndarray
+        The randompy colored segmentation. The RGB channels are in the last axis.
     """
     assert isinstance(seg, np.ndarray)
     assert seg.dtype.kind in ('u', 'i')
@@ -96,10 +101,9 @@ def colorize_segmentation(seg, ignore_label=None, ignore_color=(0, 0, 0)):
     return result
 
 
-def _from_matplotlib_cmap(cmap):
+def from_matplotlib_cmap(cmap):
     """
-    Converts the name of a matplotlib colormap to a colormap function that can be applied to a numpy array.
-    arrays.
+    Converts the name of a matplotlib colormap to a colormap function that can be applied to a :class:`numpy.ndarray`.
 
     Parameters
     ----------
@@ -108,7 +112,9 @@ def _from_matplotlib_cmap(cmap):
 
     Returns
     -------
-        callable
+    callable
+        A function that maps greyscale arrays to RGBA.
+
     """
     if isinstance(cmap, str):
         cmap = get_cmap(cmap)
@@ -117,17 +123,20 @@ def _from_matplotlib_cmap(cmap):
     return scalarMap.to_rgba
 
 
-def _add_alpha(img):
+def add_alpha(img):
     """
-    Adds an alpha channel to a tensor, whose last dimension corresponds to RGB color.
+    Adds a totally opaque alpha channel to a tensor, whose last axis corresponds to RGB color.
 
-    Parameters.
+    Parameters
     ----------
     img : torch.Tensor
+        The RGB image.
 
     Returns
     -------
-        torch.Tensor
+    torch.Tensor
+        The resulting RGBA image.
+
     """
     alpha_shape = list(img.shape)
     alpha_shape[-1] = 1
@@ -135,6 +144,33 @@ def _add_alpha(img):
 
 
 class ScaleTensor(SpecFunction):
+    """
+
+    Parameters
+    ----------
+    invert: bool
+        Whether the input should be multiplied with -1.
+    value_range : [float, float] or None, optional
+        If specified, tensor will be scaled by a linear map that maps :code:`value_range[0]` will be mapped to 0,
+        and :code:`value_range[1]` will be to 1.
+    scale_robust: bool, optional
+        Whether outliers in the input should be ignored in the scaling.
+
+        Has no effect if :obj:`value_range` is specified.
+    quantiles : (float, float), optional
+        Values under the first and above the second quantile are considered outliers for robust scaling.
+
+        Ignored if :obj:`scale_robust` is False or :obj:`value_range` is specified.
+    keep_centered : bool, optional
+        Whether the scaling should be symmetric in the sense that (if the scaling function is :math:`f`):
+
+        .. math::
+            f(-x) = 0.5 - f(x)
+
+        This can be useful in combination with `diverging colormaps
+        <https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html#diverging>`_.
+
+    """
     def __init__(self, invert=False, value_range=None, scale_robust=False, quantiles=(0.05, 0.95), keep_centered=False):
         super(ScaleTensor, self).__init__(
             in_specs={'tensor': ['Pixels']},
@@ -149,6 +185,9 @@ class ScaleTensor(SpecFunction):
         self.eps = 1e-12
 
     def quantile_scale(self, tensor, quantiles=None, return_params=False):
+        """
+        Scale tensor linearly, such that the :code:`quantiles[i]`-quantile ends up on :code:`quantiles[i]`.
+        """
         quantiles = self.quantiles if quantiles is None else quantiles
         q_min = np.percentile(tensor.numpy(), 100 * self.quantiles[0])
         q_max = np.percentile(tensor.numpy(), 100 * self.quantiles[1])
@@ -161,6 +200,10 @@ class ScaleTensor(SpecFunction):
             return tensor * scale + offset
 
     def scale_tails(self, tensor):
+        """
+        Scale the tails (the elements below :code:`self.quantiles[0]` and the ones above :code:`self.quantiles[1]`)
+        linearly to make all values lie in :math:`[0, 1]`.
+        """
         t_min, t_max = torch.min(tensor), torch.max(tensor)
         if t_min < 0:
             ind = tensor < self.quantiles[0]
@@ -174,6 +217,9 @@ class ScaleTensor(SpecFunction):
         return tensor
 
     def internal(self, tensor):
+        """
+        Scales the input tensor to the interval :math:`[0, 1]`.
+        """
         if self.invert:
             tensor *= -1
         if not self.keep_centered:
@@ -215,41 +261,58 @@ class ScaleTensor(SpecFunction):
 
 
 class Colorize(SpecFunction):
+    """
+    Constructs a function used for the colorization / color normalization of tensors. The output tensor has a
+    length 4 RGBA output dimension labeled 'Color'.
+
+    If the input tensor is continuous, a color dimension will be added if not present already.
+    Then, it will be scaled to :math:`[0, 1]`.
+    How exactly the scaling is performed can be influenced by the parameters below.
+
+    If the tensor consists of only ones and zeros, the ones will become black and the zeros transparent white.
+
+    If the input tensor is discrete including values different to zero and one,
+    it is assumed to be a segmentation and randomly colorized.
+
+    Parameters
+    ----------
+    background_label : int or tuple, optional
+        Value of input tensor that will be colored with background color.
+    background_color : int or tuple, optional
+        Color that will be assigned to regions of the input having the value background_label.
+    opacity : float, optional
+        .. currentmodule:: firelight.visualizers.container_visualizers
+
+        Multiplier that will be applied to alpha channel. Useful to blend images with :class:`OverlayVisualizer`.
+    value_range : tuple, optional
+        Range the input data will lie in (e.g. :math:`[-1, 1]` for l2-normalized vectors). This range will be mapped
+        linearly to the unit interval :math:`[0, 1]`.
+        If not specified, the output data will be scaled to use the full range :math:`[0, 1]`.
+    cmap : str or callable or None, optional
+        If str, has to be the name of a matplotlib `colormap
+        <https://matplotlib.org/examples/color/colormaps_reference.html>`_,
+        to be used to color grayscale data.
+
+        If callable, has to be function that adds a RGBA color dimension at the end, to an input :class:`numpy.ndarray`
+        with values between 0 and 1.
+
+        If None, the output will be grayscale with the intensity in the opacity channel.
+    colorize_jointly : list, optional
+        List of the names of dimensions that should be colored jointly. Default: :code:`['W', 'H', 'D']`.
+
+        Data points separated only in these dimensions will be scaled equally. See :class:`StackVisualizer` for an
+        example usage.
+
+    """
     def __init__(self, background_label=None, background_color=None, opacity=1.0, value_range=None, cmap=None,
                  colorize_jointly=None, scaling_options=None):
-        """
-        Constructs an object used for the colorization / color normalization of tensors. The output tensor has a
-        length 4 RGBA output dimension labeled 'Color'.
-
-        Parameters
-        ----------
-        background_label : int or tuple
-            Value of input tensor that will be colored with background color
-        background_color : int or tuple
-            Color that will be assigned to regions of the input having the value background_label.
-        opacity : float
-            Multiplier that will be applied to alpha channel. Useful to blend images with OverlayVisualizer
-        value_range : tuple
-            Range the input data will lie in (e.g. [-1, 1] for l2-normalized vectors). This range will be mapped
-            linearly to the unit interval [0, 1].
-            If not specified, the output data will be scaled to use the full range [0, 1].
-        cmap : str or callable
-            If str, has to be the name of a matplotlib colormap, to be used to color grayscale data. (see
-            https://matplotlib.org/examples/color/colormaps_reference.html for a list of available colormaps).
-            If callable, has to be function that adds a RGBA color dimension at the end, to an input numpy array with
-            values between 0 and 1.
-        colorize_jointly : list
-            List of the names of dimensions that should be colored jointly. Default: ['W', 'H', 'D'].
-            data points separated only in these dimensions will be scaled equally. See StackVisualizer for an example
-            usage.
-        """
         colorize_jointly = ('W', 'H', 'D') if colorize_jointly is None else list(colorize_jointly)
         collapse_into = {'rest': 'B'}
         collapse_into.update({d: 'Pixels' for d in colorize_jointly})
         super(Colorize, self).__init__(in_specs={'tensor': ['B', 'Pixels', 'Color']},
                                        out_spec=['B', 'Pixels', 'Color'],
                                        collapse_into=collapse_into)
-        self.cmap = _from_matplotlib_cmap(cmap) if isinstance(cmap, str) else cmap
+        self.cmap = from_matplotlib_cmap(cmap) if isinstance(cmap, str) else cmap
         self.background_label = background_label
         self.background_color = (0, 0, 0, 0) if background_color is None else tuple(background_color)
         if len(self.background_color) == 3:
@@ -263,9 +326,11 @@ class Colorize(SpecFunction):
         self.scale_tensor = ScaleTensor(**scaling_options)
 
     def add_alpha(self, img):
-        return _add_alpha(img)
+        return add_alpha(img)
 
     def normalize_colors(self, tensor):
+        """Scale each color channel individually to use the whole extend of :math:`[0, 1]`. Uses :class:`ScaleTensor`.
+        """
         tensor = tensor.permute(2, 0, 1)
         # TODO: vectorize
         # shape Color, Batch, Pixel
@@ -276,6 +341,8 @@ class Colorize(SpecFunction):
         return tensor
 
     def internal(self, tensor):
+        """If not present, add a color channel to tensor. Scale the colors using :meth:`Colorize.normalize_colors`.
+        """
         if self.background_label is not None:
             bg_mask = tensor == self.background_label
             bg_mask = bg_mask[..., 0]
@@ -317,15 +384,3 @@ class Colorize(SpecFunction):
             tensor[bg_mask.byte()] = torch.Tensor(np.array(self.background_color)).type_as(tensor)
 
         return tensor
-
-
-if __name__ == '__main__':
-
-    print('-'*100)
-    test_tensor = torch.Tensor([0, 1, 2, 3, 4])
-    colorize = Colorize(cmap='inferno')
-    out, spec = colorize(tensor=(test_tensor, 'W'), out_spec=['W', 'Color'], return_spec=True)
-    print(out)
-    print(out.shape)
-    print(spec)
-
