@@ -13,12 +13,7 @@ except ImportError:
 
 class IdentityVisualizer(BaseVisualizer):
     """
-    Visualizer that returns the tensor passed to it. Useful to visualize each channel of a tensor as a separate
-    greyscale image.
-
-    Parameters
-    ----------
-    super_kwargs : dict
+    Visualizer that returns the tensor passed to it. Useful to visualize each channel of a tensor as a separate image.
     """
     def __init__(self, **super_kwargs):
         super(IdentityVisualizer, self).__init__(
@@ -28,6 +23,7 @@ class IdentityVisualizer(BaseVisualizer):
         )
 
     def visualize(self, tensor, **_):
+        """"""
         return tensor
 
 
@@ -43,6 +39,7 @@ class ImageVisualizer(BaseVisualizer):
         )
 
     def visualize(self, image, **_):
+        """"""
         return image
 
 
@@ -58,6 +55,7 @@ class InputVisualizer(BaseVisualizer):
         )
 
     def visualize(self, input, **_):
+        """"""
         return input
 
 
@@ -73,6 +71,7 @@ class TargetVisualizer(BaseVisualizer):
         )
 
     def visualize(self, target, **_):
+        """"""
         return target
 
 
@@ -88,10 +87,14 @@ class PredictionVisualizer(BaseVisualizer):
         )
 
     def visualize(self, prediction, **_):
+        """"""
         return prediction
 
 
 class MSEVisualizer(BaseVisualizer):
+    """
+    Visualize the Mean Squared Error (MSE) between two tensors (e.g. prediction and target).
+    """
     def __init__(self, **super_kwargs):
         super(MSEVisualizer, self).__init__(
             in_specs={'prediction': 'B', 'target': 'B'},
@@ -100,10 +103,14 @@ class MSEVisualizer(BaseVisualizer):
         )
 
     def visualize(self, prediction, target, **_):
+        """"""
         return (prediction - target)**2
 
 
 class SegmentationVisualizer(BaseVisualizer):
+    """
+    Same as :class:`IdentityVisualizer`, but acting on 'segmentation'.
+    """
     def __init__(self, **super_kwargs):
         super(SegmentationVisualizer, self).__init__(
             in_specs={'segmentation': 'B'},
@@ -112,16 +119,13 @@ class SegmentationVisualizer(BaseVisualizer):
         )
 
     def visualize(self, segmentation, **_):
+        """"""
         return segmentation
 
 
 class RGBVisualizer(BaseVisualizer):
     """
     Visualize the input tensor as RGB images. If the input has n * 3 channels, n color images will be returned.
-
-    Parameters
-    ----------
-    super_kwargs
     """
     def __init__(self, **super_kwargs):
         super(RGBVisualizer, self).__init__(
@@ -131,6 +135,7 @@ class RGBVisualizer(BaseVisualizer):
         )
 
     def visualize(self, tensor, **_):
+        """"""
         n_channels = tensor.shape[1]
         assert n_channels % 3 == 0, f'the number of channels {tensor.shape[1]} has to be divisible by 3'
         tensor = tensor.contiguous().view(tensor.shape[0], n_channels // 3, 3)
@@ -145,7 +150,8 @@ class MaskVisualizer(BaseVisualizer):
     ----------
     mask_label : float
         Label to be used for the construction of the mask
-    super_kwargs
+    **super_kwargs
+
     """
     def __init__(self, mask_label, **super_kwargs):
         super(MaskVisualizer, self).__init__(
@@ -156,18 +162,19 @@ class MaskVisualizer(BaseVisualizer):
         self.mask_label = mask_label
 
     def visualize(self, tensor, **states):
+        """"""
         return (tensor == self.mask_label).float()
 
 
 class ThresholdVisualizer(BaseVisualizer):
     """
-    Returns a mask resulting from a thresholding of the input tensor.
+    Returns a mask resulting from thresholding the input tensor.
 
     Parameters
     ----------
     threshold : int or float
-    mode : str
-        one of the modes in MODES, specifying how to threshold
+    mode : str, optional
+        one of the :attr:`ThresholdVisualizer.MODES`, specifying how to threshold.
     super_kwargs
     """
 
@@ -184,6 +191,7 @@ class ThresholdVisualizer(BaseVisualizer):
         self.mode = mode
 
     def visualize(self, tensor, **_):
+        """"""
         if self.mode == 'greater':
             result = tensor > self.threshold
         elif self.mode == 'smaller':
@@ -199,17 +207,19 @@ class ThresholdVisualizer(BaseVisualizer):
 
 def pca(embedding, output_dimensions=3, reference=None, center_data=False):
     """
-    Principal component analysis. Dimension 1 of the input embedding is reduced
+    Principal component analysis wrapping :class:`sklearn.decomposition.PCA`.
+    Dimension 1 of the input embedding is reduced
 
     Parameters
     ----------
     embedding : torch.Tensor
         Embedding whose dimensions will be reduced.
-    output_dimensions : int
+    output_dimensions : int, optional
         Number of dimension to reduce to.
-    reference : torch.Tensor
+    reference : torch.Tensor, optional
         Optional tensor that will be used to train PCA on.
-    center_data
+    center_data : bool, optional
+        Whether to subtract the mean before PCA.
 
     Returns
     -------
@@ -249,11 +259,20 @@ def pca(embedding, output_dimensions=3, reference=None, center_data=False):
 class PcaVisualizer(BaseVisualizer):
     """
     PCA Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
-    to 3 which are interpreted as RGB.
+    to a multiple of 3 which are interpreted as sets RGB images.
 
     Parameters
     ----------
-    super_kwargs
+    n_components : int, optional
+        Number of components to use. Must be divisible by 3.
+    joint_specs: :obj:`tuple` of :obj:`str`, optional
+        Entries only separated along these axis are treated jointly.
+
+        Defaults to spatial dimensions.
+
+        Use e.g. :code:`('B', 'H', 'W')` to run PCA jointly on all images of the batch.
+        #TODO: make this example work. Right now, all dimensions except 'B' work.
+    **super_kwargs
 
     """
     def __init__(self, n_components=3, joint_specs=('D', 'H', 'W'), **super_kwargs):
@@ -266,6 +285,7 @@ class PcaVisualizer(BaseVisualizer):
         self.n_images = n_components // 3
 
     def visualize(self, embedding, **_):
+        """"""
         # if there are not enough channels, add some zeros
         if embedding.shape[1] < 3 * self.n_images:
             expanded_embedding = torch.zeros(embedding.shape[0], 3 * self.n_images, *embedding.shape[2:])\
@@ -279,19 +299,19 @@ class PcaVisualizer(BaseVisualizer):
 
 class MaskedPcaVisualizer(BaseVisualizer):
     """
-    More general version of PcaVisualizer that allows for an ignore mask. Data points which have the ignore_label in
-    the Segmentation are ignored in the Pca Analysis.
+    Version of PcaVisualizer that allows for an ignore mask. Data points which are labeled with :code:`ignore_label` in
+    the segmentation are ignored in the PCA analysis.
 
     Parameters
     ----------
-    ignore_label : int or float
+    ignore_label : int or float, optional
         Data points with this label in the segmentation are ignored.
-    n_components : int
+    n_components : int, optional
         Number of components for PCA. Has to be divisible by 3, such that a whole number of RGB images can be
         returned.
-    background_label : float
+    background_label : float, optional
         As in BaseVisualizer, here used by default to color the ignored region.
-    super_kwargs
+    **super_kwargs
     
     """
     def __init__(self, ignore_label=None, n_components=3, background_label=0, **super_kwargs):
@@ -305,6 +325,7 @@ class MaskedPcaVisualizer(BaseVisualizer):
         self.n_images = n_components // 3
 
     def visualize(self, embedding, segmentation, **_):
+        """"""
         # if there are not enough channels, add some zeros
         if embedding.shape[1] < 3 * self.n_images:
             expanded_embedding = torch.zeros(embedding.shape[0], 3 * self.n_images, *embedding.shape[2:])\
@@ -337,11 +358,18 @@ class MaskedPcaVisualizer(BaseVisualizer):
 class TsneVisualizer(BaseVisualizer):
     """
     tSNE Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
-    to 3 which are interpreted as RGB.
+    to a multiple of 3 which are interpreted as sets RGB images.
 
     Parameters
     ----------
-    super_kwargs
+    n_components : int, optional
+        Number of components to use. Must be divisible by 3.
+    joint_dims: :obj:`tuple` of :obj:`str`, optional
+        Entries only separated along these axis are treated jointly.
+
+        Defaults to spatial dimensions.
+    **super_kwargs
+
     """
     def __init__(self, joint_dims=None, n_components=3, **super_kwargs):
         joint_dims = ['D', 'H', 'W'] if joint_dims is None else joint_dims
@@ -355,6 +383,7 @@ class TsneVisualizer(BaseVisualizer):
         self.n_images = n_components // 3
 
     def visualize(self, embedding, **_):
+        """"""
         shape = embedding.shape
         # bring embedding into shape (n_samples, n_features) as requested by TSNE
         embedding = embedding.contiguous().view(-1, shape[-1])
@@ -371,15 +400,24 @@ class UmapVisualizer(BaseVisualizer):
     UMAP Visualization of high dimensional embedding tensor. An arbitrary number of channels is reduced
     to 3 which are interpreted as RGB.
 
+    For a detailed discussion of parameters, see https://umap-learn.readthedocs.io/en/latest/parameters.html.
+
     Parameters
     ----------
-    see https://umap-learn.readthedocs.io/en/latest/parameters.html
-    n_neighbors: controls how many neighbors are considered for distance
-                    estimation on the manifold. Low number focuses on local
-                    distance, large numbers more on global structure, default 15
-    min_dist: minimum distance of points after dimension reduction, default 0.1
+    joint_dims: :obj:`tuple` of :obj:`str`, optional
+        Entries only separated along these axis are treated jointly.
 
-    super_kwargs
+        Defaults to spatial dimensions.
+    n_components : int, optional
+        Number of components to use. Must be divisible by 3.
+    n_neighbors: int, optional
+        controls how many neighbors are considered for distance
+        estimation on the manifold. Low number focuses on local
+        distance, large numbers more on global structure, default 15.
+    min_dist: float, optional
+        minimum distance of points after dimension reduction, default 0.1.
+
+    **super_kwargs
 
     """
     def __init__(self, joint_dims=None, n_components=3, n_neighbors=15, min_dist=0.1, **super_kwargs):
@@ -399,6 +437,7 @@ class UmapVisualizer(BaseVisualizer):
         self.n_images = n_components // 3
 
     def visualize(self, embedding, **_):
+        """"""
         shape = embedding.shape
         # bring embedding into shape (n_samples, n_features) as requested by TSNE
         embedding = embedding.contiguous().view(-1, shape[-1])
@@ -418,11 +457,12 @@ class NormVisualizer(BaseVisualizer):
 
     Parameters
     ----------
-    order : int
+    order : int, optional
         Order of the norm (Default is 2, euclidean norm).
-    dim : str
+    dim : str, optional
         Name of the dimension in which the norm is computed.
-    super_kwargs
+    **super_kwargs
+
     """
     def __init__(self, order=2, dim='C', **super_kwargs):
         super(NormVisualizer, self).__init__(
@@ -433,6 +473,7 @@ class NormVisualizer(BaseVisualizer):
         self.order = order
 
     def visualize(self, tensor, **_):
+        """"""
         return tensor.norm(p=self.order, dim=1)
 
 
@@ -442,9 +483,10 @@ class DiagonalSplitVisualizer(BaseVisualizer):
 
     Parameters
     ----------
-    offset : int
+    offset : int, optional
         The diagonal along which the image will be split is shifted by offset.
-    super_kwargs
+    **super_kwargs
+
     """
     def __init__(self, offset=0, **super_kwargs):
         super(DiagonalSplitVisualizer, self).__init__(
@@ -456,6 +498,7 @@ class DiagonalSplitVisualizer(BaseVisualizer):
         self.offset = offset
 
     def visualize(self, upper_right_image, lower_left_image, **_):
+        """"""
         # upper_right and lower_left are tensors with shape (B, H, W)
 
         image_shape = upper_right_image.shape[1:]
@@ -469,7 +512,22 @@ class DiagonalSplitVisualizer(BaseVisualizer):
 
 
 class CrackedEdgeVisualizer(BaseVisualizer):
-    def __init__(self, width, connective_dims=('H', 'W'), **super_kwargs):
+    """
+    Visualize the boundaries of a segmentation.
+
+    Parameters
+    ----------
+    width : int, optional
+        width of the boundary in every direction
+    connective_dims : tuple, optional
+        Tuple of axis names. Edges in those axes will be shown.
+
+        E.g. use :code:`('D', 'H', 'W')` to visualize edges in 3D.
+
+    **super_kwargs
+
+    """
+    def __init__(self, width=1, connective_dims=('H', 'W'), **super_kwargs):
         self.connective_dims = list(connective_dims)
         super(CrackedEdgeVisualizer, self).__init__(
             in_specs={'segmentation': ['B'] + self.connective_dims},
@@ -493,6 +551,7 @@ class CrackedEdgeVisualizer(BaseVisualizer):
         return [make_tuple(list(offset)) for offset in offsets]
 
     def visualize(self, segmentation, **_):
+        """"""
         directional_boundaries = []
 
         for padding0, padding1, slicing in self.pad_slice_tuples:
@@ -520,11 +579,12 @@ class UpsamplingVisualizer(BaseVisualizer):
     ----------
     specs : list of str
         Specs of the axes to upsample along.
-    shape : None or int or list of int
+    shape : None or int or list, optional
         Shape after upsampling.
-    factors: None or int or list of int
+    factors: None or int or list, optional
         Factors to upsample by.
-    super_kwargs
+    **super_kwargs
+
     """
     def __init__(self, specs, shape=None, factors=None, **super_kwargs):
         self.specs = list(specs)
@@ -543,6 +603,7 @@ class UpsamplingVisualizer(BaseVisualizer):
         )
 
     def visualize(self, tensor, reference=None, **_):
+        """"""
         if self.from_reference:
             assert reference is not None, \
                 f'Please supply a reference when neither upsampled shape nor upsampling factors are specified at init.'
@@ -559,5 +620,3 @@ class UpsamplingVisualizer(BaseVisualizer):
         for i, factor in enumerate(factors):
             tensor = _upsample_axis(tensor, i+1, factor)
         return tensor
-
-
