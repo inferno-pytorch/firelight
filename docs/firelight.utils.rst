@@ -1,8 +1,9 @@
 firelight.utils package
 =======================
 
-Submodules
-----------
+..
+    Submodules
+    ----------
 
 firelight.utils.dim\_utils module
 ---------------------------------
@@ -21,10 +22,11 @@ firelight.utils.io\_utils module
    :show-inheritance:
 
 
-Module contents
----------------
+..
+    Module contents
+    ---------------
 
-.. automodule:: firelight.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:
+    .. automodule:: firelight.utils
+       :members:
+       :undoc-members:
+       :show-inheritance:

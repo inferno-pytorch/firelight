@@ -6,8 +6,8 @@ A close-to-real-world example of how to use firelight.
 """
 
 ##############################################################################
-#  First of all, let us get some mock data to visualize.
-#  We generate the following tensors:
+# First of all, let us get some mock data to visualize.
+# We generate the following tensors:
 #
 # - :code:`input` of shape :math:`(B, D, H, W)`, some noisy raw data,
 # - :code:`target` of shape :math:`(B, D, H, W)`, the ground truth foreground
@@ -65,7 +65,7 @@ for name, (tensor, spec) in states.items():
 #
 # We will use the following one:
 #
-# .. literalinclude:: ../../examples/example_config_0.yml
+# .. literalinclude:: ../../../examples/usage/example_config_0.yml
 #    :language: yaml
 #
 # Lets load the file and construct the visualizer using :code:`get_visualizer`:

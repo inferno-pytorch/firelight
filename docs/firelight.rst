@@ -1,17 +1,9 @@
 firelight package
 =================
 
-Subpackages
------------
-
 .. toctree::
-
-   firelight.examples
-   firelight.utils
    firelight.visualizers
-
-Submodules
-----------
+   firelight.utils
 
 firelight.config\_parsing module
 --------------------------------
@@ -29,11 +21,11 @@ firelight.inferno\_callback module
    :undoc-members:
    :show-inheritance:
 
+..
+    Module contents
+    ---------------
 
-Module contents
----------------
-
-.. automodule:: firelight
-   :members:
-   :undoc-members:
-   :show-inheritance:
+    .. automodule:: firelight
+       :members:
+       :undoc-members:
+       :show-inheritance:

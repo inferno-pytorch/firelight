@@ -449,7 +449,7 @@ def equalize_shapes(tensor_spec_pairs):
 
 class SpecFunction:
     """
-    Class that wraps a function, specified in the method 'internal', to be applicable to tensors with of almost
+    Class that wraps a function, specified in the method :meth:`internal`, to be applicable to tensors with of almost
     arbitrary dimensionality. This is achieved by applying the following steps when the function is called:
 
     - The inputs are reshaped and their dimensions are permuted to match their respective order of dimensions

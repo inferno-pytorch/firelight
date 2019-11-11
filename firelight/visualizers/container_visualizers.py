@@ -16,7 +16,7 @@ def _to_rgba(color):
 
     Returns
     -------
-        list
+    list
 
     """
     if isinstance(color, (int, float)):  # color given as brightness
@@ -36,6 +36,7 @@ def _to_rgba(color):
 def _padded_concatenate(tensors, dim, pad_width, pad_value):
     """
     Concatenate tensors along specified dimension, adding padding between them.
+
     Parameters
     ----------
     tensors : list of torch.Tensor
@@ -46,9 +47,11 @@ def _padded_concatenate(tensors, dim, pad_width, pad_value):
         Width of the padding along concatenation dimension.
     pad_value : numeric or list like
         Value to fill the padding tensor with. Can be list, e.g. RGBA for tensors with color as last dimension.
+
     Returns
     -------
-        torch.Tensor
+    torch.Tensor
+
     """
     tensors = list(tensors)
     device = tensors[0].device
@@ -63,52 +66,53 @@ def _padded_concatenate(tensors, dim, pad_width, pad_value):
 
 
 class ImageGridVisualizer(ContainerVisualizer):
+    """
+    Visualizer that arranges outputs of child visualizers in a grid of images.
+
+    Parameters
+    ----------
+    row_specs: list
+        List of dimension names. These dimensions of the outputs of child visualizers will be put
+        into the height dimension of the resulting image, according to the order in the list.
+
+        In other words, data points only separated in dimensions at the beginning of this list will be right next to
+        each other, while data points separated in dimensions towards the back will be further away from each other
+        in the output image.
+
+        A special dimension name is 'V' (for visualizers).
+        It stands for the dimension differentiating between the child visualizers.
+
+        **Example**:
+        Given the tensor :code:`[[1,  2 , 3 ], [10, 20, 30]]` with shape (2, 3)
+        and dimension names :code:`['A', 'B']`, this is the order of the rows, depending on the specified row_specs
+        (suppose :code:`column_specs = []`):
+
+        - If :code:`row_specs = ['B', 'A']`, the output will be :code:`[1, 2, 3, 10, 20, 30]`
+        - If :code:`row_specs = ['A', 'B']`, the output will be :code:`[1, 10, 2, 20, 3, 30]`
+
+    column_specs : list
+        As row_specs but for columns of resulting image. Each dimension of child visualizations has to either
+        occur in row_specs or column_specs. The intersection of row_specs and column specs has to be empty.
+    pad_width : int or dict
+        Determines the width of padding when concatenating images. Depending on type:
+
+        - int:  Padding will have this width for concatenations along all dimensions, apart from H and W (no
+                padding between adjacent pixels in image)
+        - dict: Keys are dimension names, values the padding width when concatenating along them. Special key
+                'rest' determines default value if given (otherwise no padding is used as default).
+
+    pad_value : int or dict
+        Determines the color of padding when concatenating images. Colors can be given as floats (gray values) or
+        list of RGB / RGBA values. If dict, interpreted as pad_width
+    upsampling_factor : int
+        The whole resulting image grid will be upsampled by this factor. Useful when visualizing small images in
+        tensorboard, but can lead to unnecessarily big file sizes.
+    *super_args : list
+    **super_kwargs : dict
+
+    """
     def __init__(self, row_specs=('H', 'C', 'V'), column_specs=('W', 'D', 'T', 'B'),
                  pad_width=1, pad_value=.5, upsampling_factor=1, *super_args, **super_kwargs):
-        """
-        Visualizer that arranges outputs of child visualizers in a grid of images.
-
-        Parameters
-        ----------
-        row_specs: list
-            List of dimension names. These dimensions of the outputs of child visualizers will be put
-            into the height dimension of the resulting image, according to the order in the list.
-
-            In other words, data points only separated in dimensions at the beginning of this list will be right next to
-            each other, while data points separated in dimensions towards the back will be further away from each other
-            in the output image.
-
-            A special dimension name is 'V' (for visualizers).
-            It stands for the dimension differentiating between the child visualizers.
-
-            **Example**:
-            Given the tensor :code:`[[1,  2 , 3 ], [10, 20, 30]]` with shape (2, 3)
-            and dimension names :code:`['A', 'B']`, this is the order of the rows, depending on the specified row_specs
-            (suppose :code:`column_specs = []`):
-
-            - If :code:`row_specs = ['B', 'A']`, the output will be :code:`[1, 2, 3, 10, 20, 30]`
-            - If :code:`row_specs = ['A', 'B']`, the output will be :code:`[1, 10, 2, 20, 3, 30]`
-
-        column_specs : list
-            As row_specs but for columns of resulting image. Each dimension of child visualizations has to either
-            occur in row_specs or column_specs. The intersection of row_specs and column specs has to be empty.
-        pad_width : int or dict
-            Determines the width of padding when concatenating images. Depending on type:
-
-            - int:  Padding will have this width for concatenations along all dimensions, apart from H and W (no
-                    padding between adjacent pixels in image)
-            - dict: Keys are dimension names, values the padding width when concatenating along them. Special key
-                    'rest' determines default value if given (otherwise no padding is used as default).
-
-        pad_value : int or dict
-            Determines the color of padding when concatenating images. Colors can be given as floats (gray values) or
-            list of RGB / RGBA values. If dict, interpreted as pad_width
-        upsampling_factor : int
-            The whole resulting image grid will be upsampled by this factor. Useful when visualizing small images in
-            tensorboard, but can lead to unnecessarily big file sizes.
-        super_args : list
-        super_kwargs : dict
-        """
         super(ImageGridVisualizer, self).__init__(
             in_spec=None, out_spec=None,
             suppress_spec_adjustment=True,
@@ -197,17 +201,18 @@ class ImageGridVisualizer(ContainerVisualizer):
 
 
 class RowVisualizer(ImageGridVisualizer):
-    def __init__(self, *super_args, **super_kwargs):
-        """
-        Visualizer that arranges outputs of child visualizers in a grid of images, with different child visualizations
-        stacked vertically.
-        For more options, see ImageGridVisualizer
+    """
+    Visualizer that arranges outputs of child visualizers in a grid of images, with different child visualizations
+    stacked vertically.
+    For more options, see ImageGridVisualizer
 
-        Parameters
-        ----------
-        super_args : list
-        super_kwargs : dict
-        """
+    Parameters
+    ----------
+    *super_args :
+    **super_kwargs :
+
+    """
+    def __init__(self, *super_args, **super_kwargs):
         super(RowVisualizer, self).__init__(
             row_specs=('H', 'S', 'C', 'V'),
             column_specs=('W', 'D', 'T', 'B'),
@@ -215,17 +220,18 @@ class RowVisualizer(ImageGridVisualizer):
 
 
 class ColumnVisualizer(ImageGridVisualizer):
-    def __init__(self, *super_args, **super_kwargs):
-        """
-        Visualizer that arranges outputs of child visualizers in a grid of images, with different child visualizations
-        stacked horizontally (side by side).
-        For more options, see ImageGridVisualizer
+    """
+    Visualizer that arranges outputs of child visualizers in a grid of images, with different child visualizations
+    stacked horizontally (side by side).
+    For more options, see ImageGridVisualizer
 
-        Parameters
-        ----------
-        super_args :
-        super_kwargs :
-        """
+    Parameters
+    ----------
+    *super_args :
+    **super_kwargs :
+
+    """
+    def __init__(self, *super_args, **super_kwargs):
         super(ColumnVisualizer, self).__init__(
             row_specs=('H', 'D', 'T', 'B'),
             column_specs=('W', 'S', 'C', 'V'),
@@ -233,16 +239,17 @@ class ColumnVisualizer(ImageGridVisualizer):
 
 
 class OverlayVisualizer(ContainerVisualizer):
-    def __init__(self, *super_args, **super_kwargs):
-        """
-        Visualizer that overlays the outputs of its child visualizers on top of each other, using transparency based on
-        the alpha channel. The output of the first child visualizer will be on the top, the last on the bottom.
+    """
+    Visualizer that overlays the outputs of its child visualizers on top of each other, using transparency based on
+    the alpha channel. The output of the first child visualizer will be on the top, the last on the bottom.
 
-        Parameters
-        ----------
-        super_args :
-        super_kwargs :
-        """
+    Parameters
+    ----------
+    *super_args :
+    **super_kwargs :
+
+    """
+    def __init__(self, *super_args, **super_kwargs):
         super(OverlayVisualizer, self).__init__(
             in_spec=['Color', 'B'],
             out_spec=['Color', 'B'],
@@ -261,38 +268,35 @@ class OverlayVisualizer(ContainerVisualizer):
 
 class RiffleVisualizer(ContainerVisualizer):
     """
+    Riffles the outputs of its child visualizers along specified dimension.
+
+    For a way to also scale target and prediction equally, have a look at StackVisualizer (if the range of
+    values is known, you can also just use value_range: [a, b] for the child visualizers
+
+    Parameters
+    ----------
+    riffle_dim : str
+        Name of dimension which is to be riffled
+    *super_args :
+    **super_kwargs :
+
+    Examples
+    --------
+    Riffle the channels of a multidimensional target and prediction, such that corresponding images are closer
+    spatially. A possible configuration file would look like this::
+
+        RiffleVisualizer:
+            riffle_dim: 'C'
+            visualizers:
+                - ImageVisualizer:
+                    input_mapping:
+                        image: 'target'
+                - ImageVisualizer:
+                    input_mapping:
+                        image: 'prediction'
 
     """
     def __init__(self, riffle_dim='C', *super_args, **super_kwargs):
-        """
-        Riffles the outputs of its child visualizers along specified dimension.
-
-        For a way to also scale target and prediction equally, have a look at StackVisualizer (if the range of
-        values is known, you can also just use value_range: [a, b] for the child visualizers
-
-        Parameters
-        ----------
-        riffle_dim : str
-            Name of dimension which is to be riffled
-        super_args :
-        super_kwargs :
-
-        Examples
-        --------
-        Riffle the channels of a multidimensional target and prediction, such that corresponding images are closer
-        spatially. A possible configuration file would look like this::
-
-            RiffleVisualizer:
-                riffle_dim: 'C'
-                visualizers:
-                    - ImageVisualizer:
-                        input_mapping:
-                            image: 'target'
-                    - ImageVisualizer:
-                        input_mapping:
-                            image: 'prediction'
-
-        """
         super(RiffleVisualizer, self).__init__(
             in_spec=[riffle_dim, 'B'],
             out_spec=[riffle_dim, 'B'],
@@ -309,41 +313,40 @@ class RiffleVisualizer(ContainerVisualizer):
 
 
 class StackVisualizer(ContainerVisualizer):
+    """
+    Stacks the outputs of its child visualizers along specified dimension.
+
+    Parameters
+    ----------
+    stack_dim : str
+        Name of new dimension along which the child visualizations will be stacked. None of the child visualizations
+        should have this dimension.
+    *super_args :
+    **super_kwargs :
+
+    Example
+    -------
+    Stack a multidimensional target and prediction along an extra dimension, e.g. 'TP'. In order to make target
+    and prediction images comparable, disable colorization in the child visualizers and colorize only in the
+    StackVisualizer, jointly coloring along 'TP', thus scaling target and prediction images by the same factors.
+    The config would look like this::
+
+        StackVisualizer:
+            stack_dim: 'TP'
+            colorize: True
+            color_jointly: ['H', 'W', 'TP']  # plus other dimensions you want to scale equally, e.g. D = depth
+            visualizers:
+                - ImageVisualizer:
+                    input_mapping:
+                        image: 'target'
+                    colorize = False
+                - ImageVisualizer:
+                    input_mapping:
+                        image: 'target'
+                    colorize = True
+
+    """
     def __init__(self, stack_dim='S', *super_args, **super_kwargs):
-        """
-        Stacks the outputs of its child visualizers along specified dimension.
-
-        Parameters
-        ----------
-        stack_dim : str
-            Name of new dimension along which the child visualizations will be stacked. None of the child visualizations
-            should have this dimension.
-        super_args :
-        super_kwargs :
-
-        Example
-        -------
-        Stack a multidimensional target and prediction along an extra dimension, e.g. 'TP'. In order to make target
-        and prediction images comparable, disable colorization in the child visualizers and colorize only in the
-        StackVisualizer, jointly coloring along 'TP', thus scaling target and prediction images by the same factors.
-        The config would look like this::
-
-            StackVisualizer:
-                stack_dim: 'TP'
-                colorize: True
-                color_jointly: ['H', 'W', 'TP']  # plus other dimensions you want to scale equally, e.g. D = depth
-                visualizers:
-                    - ImageVisualizer:
-                        input_mapping:
-                            image: 'target'
-                        colorize = False
-                    - ImageVisualizer:
-                        input_mapping:
-                            image: 'target'
-                        colorize = True
-
-
-        """
         super(StackVisualizer, self).__init__(
             in_spec=[stack_dim, 'B'],
             out_spec=[stack_dim, 'B'],

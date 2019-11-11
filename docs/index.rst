@@ -7,11 +7,13 @@ Welcome to firelight's documentation!
 =====================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
-   firelight
+   introduction
+   list_of_visualizers
    auto_examples/index
+   firelight
   
 
 Indices and tables

@@ -12,6 +12,7 @@
 #
 import os
 import sys
+sys.path.insert(0, os.path.abspath('../'))
 sys.path.insert(0, os.path.abspath('../firelight/'))
 
 master_doc = 'index'
@@ -52,6 +53,7 @@ extensions = [
 
 napoleon_include_init_with_doc = True
 napoleon_include_special_with_doc = True
+napoleon_use_rtype = False
 #autosummary_generate = True
 
 # interphinx configuration
@@ -60,10 +62,12 @@ intersphinx_mapping = {
         'python': ('https://docs.python.org/', None),
         'torch': ('https://pytorch.org/docs/master/', None),
         'sklearn': ('http://scikit-learn.org/stable',
-                    (None, './_intersphinx/sklearn-objects.inv'))
+                    (None, './_intersphinx/sklearn-objects.inv')),
+        'inferno': ('http://inferno-pytorch.readthedocs.io/en/latest/', None)
 }
 
 # paths for sphinx gallery
+from sphinx_gallery.sorting import ExplicitOrder
 sphinx_gallery_conf = {
         'examples_dir': '../examples',
         'gallery_dirs': 'auto_examples',
@@ -72,6 +76,8 @@ sphinx_gallery_conf = {
             # The module you locally document uses None
             'sphinx_gallery': None,
         },
+        'subsection_order': ExplicitOrder(['../examples/usage',
+                                           '../examples/understanding']),
         # binder will does not work with readthedocs, see https://github.com/sphinx-gallery/sphinx-gallery/pull/505.
         # 'binder': {
         #      # Required keys

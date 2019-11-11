@@ -46,6 +46,7 @@ parsing_logger = logging.getLogger(__name__)
 def get_single_key_value_pair(d):
     """
     Returns the key and value of a one element dictionary, checking that it actually has only one element
+
     Parameters
     ----------
     d : dict
@@ -92,7 +93,7 @@ def get_visualizer(config, indentation=0):
     config : str or dict or BaseVisualizer
         Either path to yaml configuration file or dictionary (as constructed by loading such a file).
         If already visualizer, it is just returned.
-    indentation : int
+    indentation : int, optional
         How far logging messages arising here should be indented.
     Returns
     -------
