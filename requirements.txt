@@ -1,6 +1,6 @@
-pyyaml>=3.12x,
+pyyaml>=3.12x
 matplotlib
 numpy
 scikit-learn
 scikit-image
-torch
+torch>=1.0
