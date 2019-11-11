@@ -108,7 +108,7 @@ plt.imsave('visualizations/example_visualization.jpg', image_grid.numpy())
 
 Resulting visualization: 
 
-![Example Image Grid](/examples/example_visualization.png)
+![Example Image Grid](examples/example_visualization.png)
 
 Many more visualizers are available. Have a look at [visualizers.py](/firelight/visualizers/visualizers.py ) and [container_visualizers.py](/firelight/visualizers/container_visualizers.py) or, for a more condensed list, the imports in [config_parsing.py](/firelight/config_parsing.py).
 
