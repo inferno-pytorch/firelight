@@ -2,6 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/firelight/badge/?version=latest)](https://firelight.readthedocs.io/en/latest/?badge=latest)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/firelight.svg)](https://anaconda.org/conda-forge/firelight)
+[![PyPI version](https://badge.fury.io/py/firelight.svg)](https://badge.fury.io/py/firelight)
 
 Firelight is a visualization library for pytorch. 
 Its core object is a **visualizer**, which can be called passing some states (such as `inputs`, `target`, 
@@ -20,7 +21,7 @@ Why you will keep using firelight:
 
 ## Installation
 
-### From source (recommended to get the newest version)
+### From source (to get the most recent version)
 On python 3.6+:
 
 ```bash
@@ -30,11 +31,18 @@ cd firelight/
 # Install
 python setup.py install
 ```
-### From conda
+### Using conda
 
 Firelight is available on conda-forge for python > 3.6 and all operating systems:
 ```bash
 conda install -c pytorch -c conda-forge firelight
+```
+
+### Using pip
+
+In an environment with [scikit-learn](https://scikit-learn.org/stable/install.html) installed:
+```bash
+pip install firelight
 ```
 
 ## Example
@@ -111,7 +119,7 @@ plt.imsave('visualizations/example_visualization.jpg', image_grid.numpy())
 
 Resulting visualization: 
 
-![Example Image Grid](examples/example_visualization.png)
+![Example Image Grid](https://raw.githubusercontent.com/inferno-pytorch/firelight/master/examples/example_visualization.png)
 
 Many more visualizers are available. Have a look at [visualizers.py](/firelight/visualizers/visualizers.py ) and [container_visualizers.py](/firelight/visualizers/container_visualizers.py) or, for a more condensed list, the imports in [config_parsing.py](/firelight/config_parsing.py).
 
