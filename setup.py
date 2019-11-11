@@ -10,7 +10,7 @@ setuptools.setup(
     author="Roman Remme",
     author_email="roman.remme@iwr.uni-heidelberg.de",
     description="A visualization library for PyTorch tensors.",
-    version="0.1",
+    version="0.2.0",
     install_requires=[
         "pyyaml>=3.12",
         "matplotlib",
