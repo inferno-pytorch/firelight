@@ -20,6 +20,8 @@ def _remove_alpha(tensor, background_brightness=1):
 
 
 class VisualizationCallback(Callback):
+    # Autodoc does not pick up VisualizationCallback, since Callback is mocked.
+
     VISUALIZATION_PHASES = ['training', 'validation']
     TRAINER_STATE_PREFIXES = ('training', 'validation')
 
@@ -90,6 +92,51 @@ class VisualizationCallback(Callback):
 
 
 def get_visualization_callback(config):
+    """
+    Gets an :mod:`inferno` callback for logging of firelight visualizations.
+
+    Uses the :class:`inferno.trainers.basic.Trainer` state dictionary as input for the visualizers.
+
+    The logging frequency is taken from the trainer's
+    :class:`inferno.trainers.callbacks.logging.tensorboard.TensorboardLogger`.
+
+
+
+    Parameters
+    ----------
+    config : str or dict
+        If :obj:`str`, will be converted to :obj:`dict` using `pyyaml
+        <https://pyyaml.org/wiki/PyYAMLDocumentation>`_.
+
+        If :obj:`dict`, the keys are the tags under which the visualizations
+        will be saved in Tensorboard, while the values are the configuration
+        dictionaries to get the visualizers producing these visualizations,
+        using :func:`firelight.config_parsing.get_visualizer`.
+
+    Returns
+    -------
+    :class:`inferno.trainers.callbacks.base.Callback`
+
+    Examples
+    --------
+    The structure of a configuration file could look like this:
+
+    .. code:: yaml
+
+        # visualize model predictions
+        predictions:
+            RowVisualizer:
+                ...
+
+        # visualize something else
+        fancy_visualization:
+            RowVisualizer:
+                ...
+
+    This configuration would produce images that are saved under the tags :code:`predictions` and
+    :code:`fancy_visualization` in Tensorboard.
+
+    """
     config = yaml2dict(config)
     logging_config = {}
     default_phases = config.pop('log_during', 'all')
