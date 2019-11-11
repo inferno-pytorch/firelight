@@ -1,5 +1,8 @@
 # Firelight
 
+[![Documentation Status](https://readthedocs.org/projects/firelight/badge/?version=latest)](https://firelight.readthedocs.io/en/latest/?badge=latest)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/firelight.svg)](https://anaconda.org/conda-forge/firelight)
+
 Firelight is a visualization library for pytorch. 
 Its core object is a **visualizer**, which can be called passing some states (such as `inputs`, `target`, 
 `prediction`) returning a visualization of the data. What exactly that visualization shows, is specified in a yaml
