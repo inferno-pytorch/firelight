@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Firelight is a package for the visualization of :mod:`pytorch` tensors as images.
+Firelight is a package for the visualization of `pytorch <https://pytorch.org/>`_ tensors as images.
 It uses a flexible way of handling tensor shapes, which allows visualization of data
 of arbitrary dimensionality (See :mod:`firelight.utils.dim_utils` for details).
 
