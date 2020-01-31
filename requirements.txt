@@ -4,3 +4,4 @@ numpy
 scikit-learn
 scikit-image
 torch>=1.0
+texttable

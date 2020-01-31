@@ -21,3 +21,7 @@ def yaml2dict(path):
     with open(path, 'r') as f:
         readict = yaml.load(f)
     return readict
+
+
+def shape_to_str(shape):
+            return '(' + ','.join([str(s) for s in shape]) + ')'

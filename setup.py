@@ -25,6 +25,7 @@ setuptools.setup(
         "scikit-learn",
         "scikit-image",
         "torch",
+        "texttable",
     ],
     extras_requires={
         'umap': ['umap-learn>=0.3.8'],

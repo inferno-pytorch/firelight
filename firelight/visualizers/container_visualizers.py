@@ -1,7 +1,9 @@
 from .base import ContainerVisualizer
 from ..utils.dim_utils import convert_dim
+from ..utils.io_utils import shape_to_str
 import torch
 import torch.nn.functional as F
+from texttable import Texttable
 
 
 def _to_rgba(color):
@@ -134,6 +136,8 @@ class ImageGridVisualizer(ContainerVisualizer):
 
         self.n_row_dims = len(row_specs)
         self.n_col_dims = len(column_specs)
+        self.row_specs = row_specs
+        self.column_specs = column_specs
         self.initial_spec = list(row_specs) + list(column_specs) + ['out_height', 'out_width', 'Color']
 
         self.pad_value = pad_value
@@ -158,13 +162,26 @@ class ImageGridVisualizer(ContainerVisualizer):
 
         return result
 
-    def visualization_to_image(self, visualization, spec):
+    def visualization_to_image(self, visualization, spec, return_debug_info=True):
+        # converts a high dimensional visualization to a 2D image, as specified by self.row_dims and self.column_dims.
+
         # this function should not be overridden for regular container visualizers, but is here, as the specs have to be
         # known in the main visualization function. 'combine()' is never called, internal is used directly
 
+        debug_info = {}  # store information that will be useful if concatenation fails later on
+
         collapsing_rules = [(d, 'B') for d in spec if d not in self.initial_spec]  # everything unknown goes into batch
+
+        # first, add all axes to visualization that are not present (by converting its spec to  self.initial_spec)
         visualization, spec = convert_dim(visualization, in_spec=spec, out_spec=self.initial_spec,
                                           collapsing_rules=collapsing_rules, return_spec=True)
+
+        debug_info['shape_before_concatenation'] = visualization.shape
+
+        assert visualization.shape[-1] == 4, \
+            f'Got color dimension of {visualization.shape[-4]} != 4. ' \
+            f'All visualizers used in ImageGridVisualizer must return RGBA ' \
+            f'(which is the case if colorization is not disabled).'
 
         # collapse the rows in the 'out_width' dimension, it is at position -2
         for _ in range(self.n_row_dims):
@@ -175,17 +192,49 @@ class ImageGridVisualizer(ContainerVisualizer):
         for _ in range(self.n_col_dims):
             visualization = _padded_concatenate(visualization, dim=-2, **self.get_pad_kwargs(spec[0]))
             spec = spec[1:]
-        return visualization
+
+        debug_info['shape_after_concatenation'] = visualization.shape
+
+        return visualization if not return_debug_info else visualization, debug_info
 
     def internal(self, *args, return_spec=False, **states):
         images = []
+        debug_infos = []
         for name in self.visualizer_kwarg_names:
-            images.append(self.visualization_to_image(*states[name]))
+            image, debug_info = self.visualization_to_image(*states[name])
+            images.append(image)
+            debug_infos.append(debug_info)
 
-        if self.visualizer_stacking == 'rows':
-            result = _padded_concatenate(images, dim=-3, **self.get_pad_kwargs('V'))
-        else:
-            result = _padded_concatenate(images, dim=-2, **self.get_pad_kwargs('V'))
+        try:
+            if self.visualizer_stacking == 'rows':
+                result = _padded_concatenate(images, dim=-3, **self.get_pad_kwargs('V'))
+            else:
+                result = _padded_concatenate(images, dim=-2, **self.get_pad_kwargs('V'))
+        except RuntimeError as e:
+            table = Texttable()
+            error_string = 'Shape Mismatch:\n'
+            error_string += 'Shapes returned by child-visualizers: \n'
+
+            table.add_rows([
+                ['Visualizer Class',
+                 f'row_specs:\n{shape_to_str(self.row_specs)}',
+                 f'column_specs:\n{shape_to_str(self.column_specs)}', 'resulting\nimage shape'],
+                *[[type(visualizer).__name__,
+                   shape_to_str(shape_before[:self.n_row_dims]),
+                   shape_to_str(shape_before[self.n_row_dims:-3]),
+                   shape_to_str(shape_after)]
+                    for visualizer, (shape_before, shape_after) in zip(
+                        self.visualizers,
+                        [(info['shape_before_concatenation'], info['shape_after_concatenation']) for info in debug_infos]
+                    )]
+            ])
+            error_string += table.draw() + ''
+            if self.visualizer_stacking == 'rows':
+                error_string += '\nThe column_specs should match, as you want to stack the visualizers as rows'
+            else:
+                error_string += '\nThe row_specs should match, as you want to stack the visualizers as columns'
+
+            assert False, error_string
 
         if self.upsampling_factor is not 1:
             result = F.interpolate(
