@@ -620,3 +620,40 @@ class UpsamplingVisualizer(BaseVisualizer):
         for i, factor in enumerate(factors):
             tensor = _upsample_axis(tensor, i+1, factor)
         return tensor
+
+
+class SemanticVisualizer(BaseVisualizer):
+    """
+    Maps certain values in input data to specified colors
+
+    Parameters
+    ----------
+    color_dict : dict
+    super_kwargs
+    """
+
+    def __init__(self, color_dict, **super_kwargs):
+        super(SemanticVisualizer, self).__init__(
+            in_specs={'tensor': ['B']},
+            out_spec=['B', 'Color'],
+            **super_kwargs
+        )
+        # add alpha if not present, convert to tensor
+        for value, color in color_dict.items():
+            if len(color) == 3:
+                color_dict[value] = [*color, 1]
+        color_dict = {int(value): torch.tensor(color).float()
+                      for value, color in color_dict.items()}
+        self.default_color = color_dict.pop('rest', torch.zeros(4))
+        self.color_dict = color_dict
+
+    def visualize(self, tensor, **_):
+        """"""
+        result = tensor.new_empty((len(tensor), 4), dtype=torch.float)
+        result[:] = self.default_color
+        print(self.color_dict)
+        print(self.default_color)
+        for value, color in self.color_dict.items():
+            print(value, (tensor==value).float().mean())
+            result[tensor == value] = color
+        return result
