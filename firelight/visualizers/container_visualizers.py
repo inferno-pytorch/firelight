@@ -315,6 +315,35 @@ class OverlayVisualizer(ContainerVisualizer):
         return result
 
 
+class AverageVisualizer(ContainerVisualizer):
+    """
+    Visualizer that averages the outputs of its child visualizers on top of each other,
+    using the alpha channel as weights .
+
+    Parameters
+    ----------
+    *super_args :
+    **super_kwargs :
+
+    """
+    def __init__(self, *super_args, **super_kwargs):
+        super(AverageVisualizer, self).__init__(
+            in_spec=['Color', 'B'],
+            out_spec=['Color', 'B'],
+            *super_args, **super_kwargs
+        )
+
+    def combine(self, *visualizations, **_):
+        result = torch.ones_like(visualizations[0])  # alpha = 1
+        visualizations = torch.stack(visualizations, dim=1)
+        print(visualizations[3].min(), visualizations[3].max(), visualizations.shape)
+        weights = visualizations[3] / visualizations[3].sum(0, keepdim=True).clamp(min=1e-6)
+        print(weights.min(), weights.max())
+        result[:3] = (visualizations[:3] * weights[None]).sum(1)
+        print(result.min(), result.max())
+        return result
+
+
 class RiffleVisualizer(ContainerVisualizer):
     """
     Riffles the outputs of its child visualizers along specified dimension.

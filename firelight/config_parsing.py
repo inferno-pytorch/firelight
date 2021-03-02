@@ -33,7 +33,8 @@ from .visualizers.container_visualizers import \
     ColumnVisualizer, \
     OverlayVisualizer, \
     RiffleVisualizer, \
-    StackVisualizer
+    StackVisualizer, \
+    AverageVisualizer
 
 
 # set up logging

@@ -651,9 +651,6 @@ class SemanticVisualizer(BaseVisualizer):
         """"""
         result = tensor.new_empty((len(tensor), 4), dtype=torch.float)
         result[:] = self.default_color
-        print(self.color_dict)
-        print(self.default_color)
         for value, color in self.color_dict.items():
-            print(value, (tensor==value).float().mean())
             result[tensor == value] = color
         return result
