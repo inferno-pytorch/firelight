@@ -154,6 +154,7 @@ class MaskVisualizer(BaseVisualizer):
 
     """
     def __init__(self, mask_label, **super_kwargs):
+        super_kwargs['value_range'] = super_kwargs.get('value_range', [0, 1])
         super(MaskVisualizer, self).__init__(
             in_specs={'tensor': ['B']},
             out_spec=['B'],
@@ -181,6 +182,7 @@ class ThresholdVisualizer(BaseVisualizer):
     MODES = ['greater', 'smaller', 'greater_equal', 'smaller_equal']
 
     def __init__(self, threshold, mode='greater_equal', **super_kwargs):
+        super_kwargs['value_range'] = super_kwargs.get('value_range', [0, 1])
         super(ThresholdVisualizer, self).__init__(
             in_specs={'tensor': ['B']},
             out_spec=['B'],
@@ -528,6 +530,7 @@ class CrackedEdgeVisualizer(BaseVisualizer):
 
     """
     def __init__(self, width=1, connective_dims=('H', 'W'), **super_kwargs):
+        super_kwargs['value_range'] = super_kwargs.get('value_range', [0, 1])
         self.connective_dims = list(connective_dims)
         super(CrackedEdgeVisualizer, self).__init__(
             in_specs={'segmentation': ['B'] + self.connective_dims},
@@ -633,6 +636,7 @@ class SemanticVisualizer(BaseVisualizer):
     """
 
     def __init__(self, color_dict, **super_kwargs):
+        super_kwargs['value_range'] = super_kwargs.get('value_range', [0, 1])
         super(SemanticVisualizer, self).__init__(
             in_specs={'tensor': ['B']},
             out_spec=['B', 'Color'],
