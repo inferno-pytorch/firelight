@@ -91,6 +91,22 @@ class PredictionVisualizer(BaseVisualizer):
         return prediction
 
 
+class DifferenceVisualizer(BaseVisualizer):
+    """
+    Visualizer that returns the difference minuend - subtrahend between the tensors passed to it.
+    """
+    def __init__(self, **super_kwargs):
+        super(DifferenceVisualizer, self).__init__(
+            in_specs={'minuend': 'B', 'subtrahend': 'B'},
+            out_spec='B',
+            **super_kwargs
+        )
+
+    def visualize(self, minuend, subtrahend, **_):
+        """"""
+        return minuend - subtrahend
+
+
 class MSEVisualizer(BaseVisualizer):
     """
     Visualize the Mean Squared Error (MSE) between two tensors (e.g. prediction and target).

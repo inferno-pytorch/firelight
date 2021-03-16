@@ -24,7 +24,8 @@ from .visualizers.visualizers import \
     DiagonalSplitVisualizer, \
     CrackedEdgeVisualizer, \
     UpsamplingVisualizer, \
-    SemanticVisualizer
+    SemanticVisualizer, \
+    DifferenceVisualizer
 
 # List of available container visualizers (visualizers acting on outputs of child visualizers)
 from .visualizers.container_visualizers import \
