@@ -23,7 +23,8 @@ from .visualizers.visualizers import \
     NormVisualizer, \
     DiagonalSplitVisualizer, \
     CrackedEdgeVisualizer, \
-    UpsamplingVisualizer
+    UpsamplingVisualizer, \
+    SemanticVisualizer
 
 # List of available container visualizers (visualizers acting on outputs of child visualizers)
 from .visualizers.container_visualizers import \
@@ -32,7 +33,8 @@ from .visualizers.container_visualizers import \
     ColumnVisualizer, \
     OverlayVisualizer, \
     RiffleVisualizer, \
-    StackVisualizer
+    StackVisualizer, \
+    AverageVisualizer
 
 
 # set up logging
