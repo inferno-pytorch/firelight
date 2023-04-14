@@ -247,7 +247,11 @@ class ScaleTensor(SpecFunction):
         else:
             if self.value_range is not None or not self.scale_robust:
                 value_range = (torch.min(tensor), torch.max(tensor)) if self.value_range is None else self.value_range
-                value_range = (-max(*value_range), max(*value_range))
+
+                # center the value range
+                limit = np.max(np.abs(value_range))
+                value_range = (-limit, limit)
+
                 tensor -= value_range[0]
                 tensor /= max(value_range[1] - value_range[0], self.eps)
             else:
