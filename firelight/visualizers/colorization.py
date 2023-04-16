@@ -171,7 +171,8 @@ class ScaleTensor(SpecFunction):
         <https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html#diverging>`_.
 
     """
-    def __init__(self, invert=False, value_range=None, scale_robust=False, quantiles=(0.05, 0.95), keep_centered=False):
+    def __init__(self, invert=False, value_range=None, scale_robust=False, quantiles=(0.05, 0.95), keep_centered=False,
+                 cmap_center_zoom=None):
         super(ScaleTensor, self).__init__(
             in_specs={'tensor': ['Pixels']},
             out_spec=['Pixels']
@@ -182,6 +183,9 @@ class ScaleTensor(SpecFunction):
         self.scale_robust = scale_robust
         self.quantiles = quantiles
         self.keep_centered = keep_centered
+        assert (keep_centered and not scale_robust) or not cmap_center_zoom, \
+            f'cmap_center_zoom is only supported for keep_centered=True and scale_robust=False'
+        self.cmap_center_zoom = cmap_center_zoom
         self.eps = 1e-12
 
     def quantile_scale(self, tensor, quantiles=None, return_params=False):
@@ -250,6 +254,8 @@ class ScaleTensor(SpecFunction):
 
                 # center the value range
                 limit = np.max(np.abs(value_range))
+                if self.cmap_center_zoom is not None:
+                    limit /= self.cmap_center_zoom
                 value_range = (-limit, limit)
 
                 tensor -= value_range[0]
